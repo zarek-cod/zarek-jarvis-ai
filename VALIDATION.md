@@ -11,6 +11,8 @@ Fecha: 2026-11-21 (America/Lima).
 | Build web TypeScript/Vite | Correcto |
 | Rust/Tauri | 50/50 correctas |
 | Backend: core, voz y rutas | 476 correctas, 3 omitidas, 1 aserción POSIX incompatible con Windows |
+| Instalador NSIS x64 | Correcto, 8,186,047 bytes |
+| Windows Defender | Sin amenazas, salida 0 |
 
 El único fallo fue `tests/core/test_credentials.py::test_file_permissions`: compara `st_mode` con `0600`, semántica POSIX no representativa de ACL NTFS. Se conserva visible como deuda de seguridad/documentación.
 
@@ -37,5 +39,7 @@ El único fallo fue `tests/core/test_credentials.py::test_file_permissions`: com
 - Conversación completa desde la UI: 10.4 s para 22 tokens de salida, incluido arranque de contexto.
 - Memoria GPU del modelo: aproximadamente 3.7 GB; ejecución íntegra en la RTX 5060 Laptop.
 - Kokoro: muestra de 5.65 s, WAV de 24 kHz y 271,244 bytes.
+- Instalador SHA-256: `61D7AE6E50E15F3CCB7C97567F1143132C9B07A6CCA7BF5C835B948728137A09`.
+- Firma Authenticode: no firmada; no se dispone de certificado comercial en esta publicación comunitaria.
 
 No se considera aprobado ningún escenario que no se haya observado o medido.

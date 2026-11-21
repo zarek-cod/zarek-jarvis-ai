@@ -40,6 +40,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\zarek\build.ps1
 
 Los artefactos de Tauri se generan bajo `frontend\src-tauri\target\release\bundle`.
 
+El instalador comunitario `v1.0.1-zarek` no está firmado con Authenticode. Antes de ejecutarlo, compare su SHA-256 con el valor publicado en la release y en `VALIDATION.md`.
+
 ## Actualizar desde OpenJarvis
 
 La rama `main` y el remoto `upstream` se conservan. Actualice sin sobrescribir ZAREK:

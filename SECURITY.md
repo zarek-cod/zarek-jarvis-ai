@@ -9,6 +9,7 @@
 - `allowed_dirs` limita por defecto las herramientas de archivo a la carpeta donde cada usuario clonó ZAREK; `setup.ps1` resuelve esa ruta dinámicamente.
 - El servidor se niega a escuchar en `0.0.0.0` sin una clave local.
 - No se desactiva Windows Defender, firewall, Smart App Control ni UAC.
+- El instalador comunitario se publica sin firma Authenticode porque no se dispone de certificado comercial. La release incluye SHA-256 y fue escaneada con Windows Defender sin amenazas.
 
 ## Brecha conocida heredada
 

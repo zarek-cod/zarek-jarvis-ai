@@ -17,6 +17,8 @@ ZAREK JARVIS AI es una adaptación local-first de OpenJarvis para Windows 11. Co
 
 ## Inicio rápido
 
+El instalador de Windows se publica en [GitHub Releases](https://github.com/zarek-cod/zarek-jarvis-ai/releases/latest). Como esta versión comunitaria no posee un certificado comercial de firma de código, Windows puede mostrar una advertencia de editor desconocido; verifique el SHA-256 publicado antes de ejecutarla.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\zarek\setup.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\zarek\start.ps1

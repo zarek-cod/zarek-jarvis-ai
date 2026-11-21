@@ -133,4 +133,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\zarek\build.ps1
 
 ## 8. Publicación y mantenimiento
 
-Repositorio público previsto: `https://github.com/zarek-cod/zarek-jarvis-ai`. Antes de cada publicación se ejecutan `git diff --check`, búsqueda de patrones de secretos, tests de frontend/backend/Rust y build. El remoto `upstream` se conserva para recibir cambios de OpenJarvis mediante una fusión revisada, nunca mediante reemplazo automático.
+Repositorio público: `https://github.com/zarek-cod/zarek-jarvis-ai`, rama predeterminada `main`, tag inicial `v1.0.1-zarek`. El instalador NSIS x64 tiene 8,186,047 bytes y SHA-256 `61D7AE6E50E15F3CCB7C97567F1143132C9B07A6CCA7BF5C835B948728137A09`; Windows Defender no detectó amenazas. No tiene firma Authenticode porque esta publicación comunitaria no dispone de certificado comercial.
+
+Antes de publicar se ejecutaron `git diff --check`, Gitleaks sobre los cambios preparados, búsqueda adicional de patrones de secretos, tests de frontend/backend/Rust y build. El remoto `upstream` se conserva para recibir cambios de OpenJarvis mediante una fusión revisada, nunca mediante reemplazo automático.
