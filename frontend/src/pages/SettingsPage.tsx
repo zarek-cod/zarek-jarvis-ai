@@ -461,14 +461,14 @@ export function SettingsPage() {
         <header className="mb-6">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-              Settings
+              Configuración
             </h1>
             {saved && (
               <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{
                 background: 'var(--color-accent-subtle)',
                 color: 'var(--color-success)',
               }}>
-                <Check size={12} /> Saved
+                <Check size={12} /> Guardado
               </span>
             )}
           </div>
@@ -479,8 +479,8 @@ export function SettingsPage() {
 
         <div className="flex flex-col gap-4">
           {/* Appearance */}
-          <Section title="Appearance">
-            <SettingRow label="Theme" description="Choose how OpenJarvis looks">
+          <Section title="Apariencia">
+            <SettingRow label="Tema" description="Elige la apariencia de ZAREK">
               <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--color-bg-secondary)' }}>
                 {themeOptions.map((opt) => {
                   const isActive = settings.theme === opt.value;
@@ -502,7 +502,7 @@ export function SettingsPage() {
                 })}
               </div>
             </SettingRow>
-            <SettingRow label="Font size">
+            <SettingRow label="Tamaño de fuente">
               <select
                 value={settings.fontSize}
                 onChange={(e) => { updateSettings({ fontSize: e.target.value as any }); showSaved(); }}
@@ -513,17 +513,17 @@ export function SettingsPage() {
                   border: '1px solid var(--color-border)',
                 }}
               >
-                <option value="small">Small</option>
-                <option value="default">Default</option>
-                <option value="large">Large</option>
+                <option value="small">Pequeña</option>
+                <option value="default">Predeterminada</option>
+                <option value="large">Grande</option>
               </select>
             </SettingRow>
             <SettingRow
-              label="Time zone"
-              description={`Dates and times in answers use this zone. Now: ${resolveTimeZone(settings.timeZone)} (${utcOffsetLabel(resolveTimeZone(settings.timeZone))})`}
+              label="Zona horaria"
+              description={`Las respuestas usan esta zona. Actual: ${resolveTimeZone(settings.timeZone)} (${utcOffsetLabel(resolveTimeZone(settings.timeZone))})`}
             >
               <select
-                aria-label="Time zone"
+                aria-label="Zona horaria"
                 value={settings.timeZone}
                 onChange={(e) => { updateSettings({ timeZone: e.target.value }); showSaved(); }}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer max-w-[14rem]"
@@ -533,7 +533,7 @@ export function SettingsPage() {
                   border: '1px solid var(--color-border)',
                 }}
               >
-                <option value="">Automatic ({deviceTimeZone()})</option>
+                <option value="">Automática ({deviceTimeZone()})</option>
                 {timeZones.map((zone) => (
                   <option key={zone} value={zone}>{zone}</option>
                 ))}
@@ -542,19 +542,19 @@ export function SettingsPage() {
           </Section>
 
           {/* Connection */}
-          <Section title="Connection">
-            <SettingRow label="Server status" description={serverInfo ? `${serverInfo.engine} / ${serverInfo.model}` : 'Not connected'}>
+          <Section title="Conexión">
+            <SettingRow label="Estado del servidor" description={serverInfo ? `${serverInfo.engine} / ${serverInfo.model}` : 'Sin conexión'}>
               <div className="flex items-center gap-2">
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{ background: healthy === true ? 'var(--color-success)' : healthy === false ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
                 />
                 <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {healthy === true ? 'Connected' : healthy === false ? 'Disconnected' : 'Checking...'}
+                  {healthy === true ? 'Conectado' : healthy === false ? 'Desconectado' : 'Comprobando...'}
                 </span>
               </div>
             </SettingRow>
-            <SettingRow label="API URL" description="Set if backend runs on a different port or host">
+            <SettingRow label="URL de API" description="Solo si el servicio usa otro puerto o equipo">
               <input
                 type="text"
                 value={settings.apiUrl}
@@ -568,7 +568,7 @@ export function SettingsPage() {
                 }}
               />
             </SettingRow>
-            <SettingRow label="API key" description="Required only if the server was started with an API key">
+            <SettingRow label="Clave de API" description="Solo si el servidor se inició con autenticación">
               <input
                 type="password"
                 value={settings.apiKey}
@@ -586,16 +586,16 @@ export function SettingsPage() {
           </Section>
 
           {/* Inference source */}
-          <Section title="Inference source">
-            <SettingRow label="Source" description="Where the app runs models. Applies after restart.">
+          <Section title="Motor de inferencia">
+            <SettingRow label="Origen" description="Dónde ejecuta ZAREK los modelos. Se aplica al reiniciar.">
               <select
                 value={srcKind}
                 onChange={(e) => { setSrcKind(e.target.value as InferenceSource['kind']); setSrcMsg(''); }}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
                 style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
               >
-                <option value="ollama">Bundled Ollama (default)</option>
-                <option value="custom">Custom OpenAI-compatible server</option>
+                <option value="ollama">Ollama local (predeterminado)</option>
+                <option value="custom">Servidor compatible con OpenAI</option>
               </select>
             </SettingRow>
             {srcKind === 'custom' && (
@@ -632,20 +632,20 @@ export function SettingsPage() {
               <button onClick={saveSource}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
                 style={{ background: 'var(--color-accent, var(--color-bg-tertiary))', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
-                Save inference source
+                Guardar motor de inferencia
               </button>
             </SettingRow>
           </Section>
 
           {/* Models */}
-          <Section title="Models">
-            <SettingRow label="Local models (Ollama)" description="Models available for local inference">
+          <Section title="Modelos">
+            <SettingRow label="Modelos locales (Ollama)" description="Modelos disponibles para inferencia privada">
               <OllamaModelList />
             </SettingRow>
             <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
-              Run <code className="px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--color-bg-tertiary)' }}>ollama pull &lt;model-name&gt;</code> in your terminal to add more models
+              Ejecuta <code className="px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--color-bg-tertiary)' }}>ollama pull &lt;modelo&gt;</code> en la terminal para añadir modelos
             </div>
-            <SettingRow label="Cloud providers" description="Green dot means API key is configured">
+            <SettingRow label="Proveedores en la nube" description="El punto verde indica que existe una clave configurada">
               <div className="flex flex-wrap gap-3">
                 <CloudProviderStatus label="OpenAI" keyName="OPENAI_API_KEY" />
                 <CloudProviderStatus label="Anthropic" keyName="ANTHROPIC_API_KEY" />
@@ -683,9 +683,9 @@ export function SettingsPage() {
           </Section>
 
           {/* Memory */}
-          <Section title="Memory">
+          <Section title="Memoria">
             <MemoryStatusRow status={memoryStatus} onRetry={() => { void refreshMemoryStatus(); }} />
-            <SettingRow label="Use memory context" description="Automatically inject relevant memories into conversations">
+            <SettingRow label="Usar contexto de memoria" description="Añade recuerdos pertinentes a las conversaciones">
               <button
                 onClick={() => {
                   const next = !memoryEnabled;
@@ -707,7 +707,7 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
-            <SettingRow label="Memory backend" description="Which retrieval engine to use">
+            <SettingRow label="Motor de memoria" description="Motor de recuperación que debe utilizarse">
               <select
                 value={memoryBackend}
                 onChange={(e) => {
@@ -729,7 +729,7 @@ export function SettingsPage() {
                 <option value="hybrid">hybrid</option>
               </select>
             </SettingRow>
-            <SettingRow label="Results to inject" description={`${memoryTopK}`}>
+            <SettingRow label="Resultados para añadir" description={`${memoryTopK}`}>
               <input
                 type="range"
                 min="1"
@@ -745,7 +745,7 @@ export function SettingsPage() {
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
               />
             </SettingRow>
-            <SettingRow label="Min relevance score" description={`${memoryMinScore}`}>
+            <SettingRow label="Relevancia mínima" description={`${memoryMinScore}`}>
               <input
                 type="range"
                 min="0"
@@ -761,7 +761,7 @@ export function SettingsPage() {
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
               />
             </SettingRow>
-            <SettingRow label="Max context tokens" description={`${memoryMaxTokens}`}>
+            <SettingRow label="Máximo de tokens de contexto" description={`${memoryMaxTokens}`}>
               <input
                 type="range"
                 min="256"
@@ -780,8 +780,8 @@ export function SettingsPage() {
           </Section>
 
           {/* Model defaults */}
-          <Section title="Model Defaults">
-            <SettingRow label="Temperature" description={`${settings.temperature}`}>
+          <Section title="Valores del modelo">
+            <SettingRow label="Temperatura" description={`${settings.temperature}`}>
               <input
                 type="range"
                 min="0"
@@ -792,7 +792,7 @@ export function SettingsPage() {
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
               />
             </SettingRow>
-            <SettingRow label="Max tokens" description={`${settings.maxTokens}`}>
+            <SettingRow label="Máximo de tokens" description={`${settings.maxTokens}`}>
               <input
                 type="range"
                 min="256"
@@ -806,8 +806,8 @@ export function SettingsPage() {
           </Section>
 
           {/* Speech */}
-          <Section title="Speech">
-            <SettingRow label="Speech-to-Text" description="Enable microphone input for voice dictation">
+          <Section title="Voz">
+            <SettingRow label="Voz a texto" description="Activa el micrófono para dictado local">
               <button
                 onClick={() => { updateSettings({ speechEnabled: !settings.speechEnabled }); showSaved(); }}
                 className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
@@ -824,7 +824,7 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
-            <SettingRow label="Text-to-Speech" description="Show a read-aloud button on assistant replies">
+            <SettingRow label="Texto a voz" description="Muestra el botón para leer respuestas en voz alta">
               <button
                 onClick={() => { updateSettings({ voiceOutputEnabled: !settings.voiceOutputEnabled }); showSaved(); }}
                 className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
@@ -841,7 +841,7 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
-            <SettingRow label="Speak replies automatically" description="Read every assistant reply aloud as soon as it finishes">
+            <SettingRow label="Leer respuestas automáticamente" description="Reproduce cada respuesta cuando termina">
               <button
                 onClick={() => { updateSettings({ voiceAutoplay: !settings.voiceAutoplay }); showSaved(); }}
                 disabled={!settings.voiceOutputEnabled}
@@ -861,7 +861,7 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
-            <SettingRow label="Voice" description="Backend and voice used for spoken replies">
+            <SettingRow label="Voz" description="Motor y voz utilizados para las respuestas habladas">
               <div className="flex items-center gap-2">
                 <span
                   className="w-2 h-2 rounded-full"
@@ -870,13 +870,13 @@ export function SettingsPage() {
                   }}
                 />
                 <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {ttsBackend === null ? 'Checking...'
+                  {ttsBackend === null ? 'Comprobando...'
                     : ttsBackend.available ? `${ttsBackend.backend}${ttsBackend.voice_id ? ` / ${ttsBackend.voice_id}` : ''}`
-                    : 'Not configured'}
+                    : 'No configurado'}
                 </span>
               </div>
             </SettingRow>
-            <SettingRow label="Backend status" description="Requires Whisper, Deepgram, or another speech backend">
+            <SettingRow label="Estado del reconocimiento" description="Motor local usado para transcribir el micrófono">
               <div className="flex items-center gap-2">
                 <span
                   className="w-2 h-2 rounded-full"
@@ -887,9 +887,9 @@ export function SettingsPage() {
                   }}
                 />
                 <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {speechBackendAvailable === null ? 'Checking...'
-                    : speechBackendAvailable ? 'Available'
-                    : 'Not configured'}
+                  {speechBackendAvailable === null ? 'Comprobando...'
+                    : speechBackendAvailable ? 'Disponible'
+                    : 'No configurado'}
                 </span>
               </div>
             </SettingRow>
@@ -902,8 +902,8 @@ export function SettingsPage() {
           </Section>
 
           {/* Data */}
-          <Section title="Data">
-            <SettingRow label="Conversations" description={`${conversations.length} stored locally`}>
+          <Section title="Datos">
+            <SettingRow label="Conversaciones" description={`${conversations.length} guardadas localmente`}>
               <div className="flex gap-2">
                 <button
                   onClick={handleExport}
@@ -912,7 +912,7 @@ export function SettingsPage() {
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg-secondary)')}
                 >
-                  <Download size={12} /> Export
+                  <Download size={12} /> Exportar
                 </button>
                 <button
                   onClick={handleImport}
@@ -921,7 +921,7 @@ export function SettingsPage() {
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg-secondary)')}
                 >
-                  <Upload size={12} /> Import
+                  <Upload size={12} /> Importar
                 </button>
               </div>
             </SettingRow>

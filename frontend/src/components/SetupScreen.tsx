@@ -12,12 +12,34 @@ import { isEmbedOnlyModel } from '../lib/model-capabilities';
 import { InferenceRecoveryButton, InferenceSourceSetup } from './InferenceSourceSetup';
 
 const STEPS = [
-  { key: 'ollama_ready', label: 'Inference Engine', icon: Cpu, detail: 'Starting Ollama...' },
-  { key: 'model_ready', label: 'AI Model', icon: Database, detail: 'Loading model...' },
-  { key: 'server_ready', label: 'API Server', icon: Server, detail: 'Starting server...' },
+  { key: 'ollama_ready', label: 'Motor de inferencia', icon: Cpu, detail: 'Iniciando Ollama...' },
+  { key: 'model_ready', label: 'Modelo de IA', icon: Database, detail: 'Cargando modelo...' },
+  { key: 'server_ready', label: 'Servidor local', icon: Server, detail: 'Iniciando servidor...' },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]['key'];
+
+function localizeSetupDetail(detail: string): string {
+  const replacements: Array<[RegExp, string]> = [
+    [/^Initializing\.\.\.$/, 'Inicializando...'],
+    [/^Starting inference engine\.\.\.$/, 'Iniciando motor de inferencia...'],
+    [/^Inference engine ready\.$/, 'Motor de inferencia listo.'],
+    [/^Checking for (.+)\.\.\.$/, 'Comprobando $1...'],
+    [/^Downloading (.+)\.\.\. \(this may take a minute\)$/, 'Descargando $1...'],
+    [/^Downloading (.+)\.\.\.$/, 'Descargando $1...'],
+    [/^Using installed model (.+)\.$/, 'Usando el modelo instalado $1.'],
+    [/^Model ready\.$/, 'Modelo listo.'],
+    [/^Starting API server\.\.\.$/, 'Iniciando servidor local...'],
+    [/^Installing dependencies.*$/, 'Verificando dependencias locales...'],
+    [/^Verifying Rust extension.*$/, 'Verificando extensión nativa...'],
+    [/^Starting API server from (.+)\.\.\.$/, 'Iniciando servidor desde $1...'],
+    [/^All systems ready\.$/, 'Todos los sistemas están listos.'],
+  ];
+  return replacements.reduce(
+    (value, [pattern, replacement]) => value.replace(pattern, replacement),
+    detail,
+  );
+}
 
 function StepRow({
   icon: Icon,
@@ -58,7 +80,7 @@ function StepRow({
           {label}
         </div>
         <div className="text-xs truncate" style={{ color: 'var(--color-text-tertiary)', maxWidth: '280px' }}>
-          {done ? 'Ready' : active ? detail : 'Waiting...'}
+          {done ? 'Listo' : active ? detail : 'En espera...'}
         </div>
       </div>
       <div className="shrink-0">
@@ -103,9 +125,10 @@ export function SetupScreen({ onReady }: { onReady: () => void }) {
         store.setModels(models);
         store.setModelsLoading(false);
         const chatModels = models.filter((m) => !isEmbedOnlyModel(m.id));
-        const recommended = rec.model && chatModels.some((m) => m.id === rec.model)
-          ? rec.model
-          : chatModels[0]?.id || '';
+        const recommended = chatModels.find((model) => model.id === 'qwen3.5:4b')?.id
+          || (rec.model && chatModels.some((model) => model.id === rec.model)
+            ? rec.model
+            : chatModels[0]?.id || '');
         if (recommended && !hadSelection) {
           store.setSelectedModel(recommended);
         }
@@ -167,21 +190,18 @@ export function SetupScreen({ onReady }: { onReady: () => void }) {
       <div className="w-full max-w-md px-6">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
-          >
-            <Cpu size={32} />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 zarek-setup-emblem">
+            <img src="/zarek-emblem.png" alt="" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-            OpenJarvis
+            ZAREK JARVIS AI
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             {!statusChecked
-              ? 'Checking your saved setup...'
+              ? 'Comprobando la configuración local...'
               : status?.source === 'custom'
-                ? 'Connecting to your AI server...'
-                : 'Setting up your local AI...'}
+                ? 'Conectando al servidor de IA...'
+                : 'Preparando su inteligencia local...'}
           </p>
         </div>
 
@@ -189,9 +209,9 @@ export function SetupScreen({ onReady }: { onReady: () => void }) {
         <div className="flex flex-col gap-2 mb-8">
           {(status?.source === 'custom'
             ? [
-                { key: 'ollama_ready' as const, label: 'Inference Engine', icon: Cpu, detail: 'Connecting to your server...' },
-                { key: 'model_ready' as const, label: 'Endpoint', icon: Database, detail: 'Checking endpoint...' },
-                { key: 'server_ready' as const, label: 'API Server', icon: Server, detail: 'Starting server...' },
+                { key: 'ollama_ready' as const, label: 'Motor de inferencia', icon: Cpu, detail: 'Conectando al servidor...' },
+                { key: 'model_ready' as const, label: 'Endpoint', icon: Database, detail: 'Comprobando endpoint...' },
+                { key: 'server_ready' as const, label: 'Servidor local', icon: Server, detail: 'Iniciando servidor...' },
               ]
             : STEPS
           ).map((step) => (
@@ -203,7 +223,7 @@ export function SetupScreen({ onReady }: { onReady: () => void }) {
               active={activeStep === step.key}
               detail={
                 activeStep === step.key && status?.detail
-                  ? status.detail
+                  ? localizeSetupDetail(status.detail)
                   : step.detail
               }
             />

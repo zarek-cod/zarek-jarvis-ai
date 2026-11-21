@@ -127,6 +127,35 @@ class TestTomlLoading:
         cfg = load_config(toml_file)
         assert cfg.system_prompt.prefix == ""
 
+    def test_agent_system_prompt_path_is_loaded_relative_to_config(
+        self, tmp_path: Path
+    ) -> None:
+        prompt = tmp_path / "identity.md"
+        prompt.write_text("Eres ZAREK JARVIS AI.", encoding="utf-8")
+        toml_file = tmp_path / "config.toml"
+        toml_file.write_text(
+            '[agent]\nsystem_prompt_path = "identity.md"\n', encoding="utf-8"
+        )
+
+        cfg = load_config(toml_file)
+
+        assert cfg.agent.default_system_prompt == "Eres ZAREK JARVIS AI."
+
+    def test_inline_agent_system_prompt_takes_precedence_over_path(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "identity.md").write_text("Prompt de archivo", encoding="utf-8")
+        toml_file = tmp_path / "config.toml"
+        toml_file.write_text(
+            '[agent]\nsystem_prompt = "Prompt directo"\n'
+            'system_prompt_path = "identity.md"\n',
+            encoding="utf-8",
+        )
+
+        cfg = load_config(toml_file)
+
+        assert cfg.agent.default_system_prompt == "Prompt directo"
+
 
 class TestGenerateToml:
     def test_contains_engine_section(self) -> None:

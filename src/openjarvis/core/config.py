@@ -8,6 +8,7 @@ found in the TOML file.
 from __future__ import annotations
 
 import functools
+import logging
 import os
 import platform
 import shutil
@@ -45,6 +46,8 @@ try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Hardware dataclasses
@@ -2169,6 +2172,27 @@ def load_config(path: Optional[Path] = None) -> JarvisConfig:
     # Apply profile even without a config file (in case defaults set one)
     if not config_path.exists() and cfg.security.profile:
         apply_security_profile(cfg.security, cfg.server)
+
+    # AgentConfig has supported inline and file-backed prompts for a long
+    # time, but the runtime consumes ``default_system_prompt``. Resolve those
+    # documented overrides here so every entry point (CLI, API and desktop)
+    # receives the same identity. Relative paths are anchored to config.toml.
+    if cfg.agent.system_prompt.strip():
+        cfg.agent.default_system_prompt = cfg.agent.system_prompt.strip()
+    elif cfg.agent.system_prompt_path.strip():
+        prompt_path = Path(cfg.agent.system_prompt_path).expanduser()
+        if not prompt_path.is_absolute():
+            prompt_path = config_path.parent / prompt_path
+        try:
+            prompt_text = prompt_path.read_text(encoding="utf-8").strip()
+            if prompt_text:
+                cfg.agent.default_system_prompt = prompt_text
+        except (OSError, UnicodeError):
+            logger.warning(
+                "Could not load agent system prompt from %s",
+                prompt_path,
+                exc_info=True,
+            )
 
     return cfg
 

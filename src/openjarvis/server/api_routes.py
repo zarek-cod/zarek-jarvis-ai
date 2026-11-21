@@ -1161,8 +1161,49 @@ async def synthesize_speech(request: Request, body: SpeechSynthesizeRequest):
             output_format="wav",
         )
     except Exception as exc:
-        logger.exception("Speech synthesis failed")
-        raise HTTPException(status_code=500, detail="Speech synthesis failed") from exc
+        # Cloud services can become unavailable between a successful health
+        # check and synthesis (for example when a plan exhausts its credits).
+        # Retry once with the private local engine; a provider-specific voice
+        # ID is deliberately not carried across to Kokoro.
+        active_id = getattr(backend, "backend_id", "")
+        config = getattr(request.app.state, "config", None)
+        if active_id == "kokoro" or config is None:
+            logger.exception("Speech synthesis failed")
+            raise HTTPException(
+                status_code=500, detail="Speech synthesis failed"
+            ) from exc
+
+        from openjarvis.speech._tts_discovery import get_tts_backend
+
+        fallback = await asyncio.to_thread(
+            get_tts_backend, "kokoro", attempted={active_id}
+        )
+        if fallback is None or getattr(fallback, "backend_id", "") != "kokoro":
+            logger.exception("Speech synthesis failed and Kokoro is unavailable")
+            raise HTTPException(
+                status_code=500, detail="Speech synthesis failed"
+            ) from exc
+
+        backend = fallback
+        voice_id, fallback_speed = _tts_voice_and_speed(request, backend)
+        speed = body.speed if body.speed is not None else fallback_speed
+        try:
+            result = await asyncio.to_thread(
+                backend.synthesize,
+                text,
+                voice_id=voice_id,
+                speed=speed,
+                output_format="wav",
+            )
+        except Exception as fallback_exc:
+            logger.exception("Speech synthesis and local fallback both failed")
+            raise HTTPException(
+                status_code=500, detail="Speech synthesis failed"
+            ) from fallback_exc
+
+        logger.warning("TTS backend %s failed; switched to local Kokoro", active_id)
+        request.app.state.tts_backend = backend
+        request.app.state.tts_resolved = True
 
     return Response(
         content=result.audio,

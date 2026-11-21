@@ -260,6 +260,45 @@ def test_synthesize_surfaces_backend_failure(mock_tts_backend):
     assert response.json()["detail"] == "Speech synthesis failed"
 
 
+def test_cloud_synthesis_failure_falls_back_to_local_kokoro(mock_tts_backend):
+    from openjarvis.speech.tts import TTSResult
+
+    cloud = MagicMock()
+    cloud.backend_id = "elevenlabs"
+    cloud.synthesize.side_effect = RuntimeError("quota exhausted")
+    local = MagicMock()
+    local.backend_id = "kokoro"
+    local.health.return_value = True
+    local.synthesize.return_value = TTSResult(
+        audio=b"RIFFlocal-fallback",
+        format="wav",
+        voice_id="bm_george",
+        sample_rate=24000,
+    )
+    config = SimpleNamespace(
+        speech=SimpleNamespace(
+            tts_backend="elevenlabs",
+            voice_id="premium-provider-voice",
+            voice_speed=0.96,
+        )
+    )
+    client = _tts_app(cloud, config=config)
+
+    with patch(
+        "openjarvis.speech._tts_discovery.get_tts_backend", return_value=local
+    ) as discover:
+        response = client.post(
+            "/v1/speech/synthesize",
+            json={"text": "Sistema listo, señor Zarek."},
+        )
+
+    assert response.status_code == 200
+    assert response.content == b"RIFFlocal-fallback"
+    discover.assert_called_once_with("kokoro", attempted={"elevenlabs"})
+    assert local.synthesize.call_args.kwargs["voice_id"] == "bm_george"
+    assert local.synthesize.call_args.kwargs["voice_id"] != "premium-provider-voice"
+
+
 def test_synthesize_offloads_backend_work(mock_tts_backend):
     from openjarvis.speech.tts import TTSResult
 

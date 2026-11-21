@@ -6,14 +6,15 @@ import { StreamingDots } from './StreamingDots';
 import { useAppStore } from '../../lib/store';
 import { shouldAutoplayFinishedReply, useTtsStore } from '../../lib/tts';
 import { stripThinkTags } from '../../lib/message-text';
-import { Sparkles, PanelRightOpen, PanelRightClose, Database, MessageSquare, X } from 'lucide-react';
+import { PanelRightOpen, PanelRightClose, Database, MessageSquare, X } from 'lucide-react';
 import { listConnectors } from '../../lib/connectors-api';
+import { ZarekCore } from '../ZarekCore';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Buenos días, señor Zarek';
+  if (hour < 18) return 'Buenas tardes, señor Zarek';
+  return 'Buenas noches, señor Zarek';
 }
 
 export function ChatArea() {
@@ -134,13 +135,19 @@ export function ChatArea() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toggle bar */}
-      <div className="flex items-center justify-end px-3 py-1.5 shrink-0">
+      {/* ZAREK status rail */}
+      <div className="zarek-command-rail flex items-center justify-between px-4 py-2 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="zarek-wordmark">ZAREK</span>
+          <span className="zarek-wordmark-sub">JARVIS AI</span>
+          <span className="zarek-rail-divider" />
+          <span className="zarek-rail-model truncate">NÚCLEO LOCAL</span>
+        </div>
         <button
           onClick={toggleSystemPanel}
           className="p-1.5 rounded-md transition-colors cursor-pointer"
           style={{ color: 'var(--color-text-tertiary)' }}
-          title={`${systemPanelOpen ? 'Hide' : 'Show'} system panel (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
+          title={`${systemPanelOpen ? 'Ocultar' : 'Mostrar'} panel del sistema (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
         >
           <PanelIcon size={16} />
         </button>
@@ -181,18 +188,14 @@ export function ChatArea() {
         className="flex-1 overflow-y-auto"
       >
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full px-4">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
-            >
-              <Sparkles size={24} />
-            </div>
-            <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+          <div className="zarek-hero flex flex-col items-center justify-center min-h-full px-4 py-8">
+            <div className="zarek-eyebrow">ZAREK SYSTEMS // PERSONAL INTELLIGENCE</div>
+            <ZarekCore />
+            <h2 className="zarek-hero__title" style={{ color: 'var(--color-text)' }}>
               {getGreeting()}
             </h2>
-            <p className="text-sm text-center max-w-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-              Ask anything. Your AI runs locally — private, fast, and always available.
+            <p className="zarek-hero__copy" style={{ color: 'var(--color-text-secondary)' }}>
+              Todos los sistemas están preparados. ¿En qué puedo asistirle?
             </p>
 
             {/* Quick action hints */}
@@ -209,7 +212,7 @@ export function ChatArea() {
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
               >
                 <Database size={14} style={{ color: 'var(--color-accent)' }} />
-                Connect Data Sources
+                Conectar fuentes
               </button>
               <button
                 onClick={() => { navigate('/data-sources'); setTimeout(() => window.dispatchEvent(new CustomEvent('switch-tab', { detail: 'messaging' })), 100); }}
@@ -223,12 +226,15 @@ export function ChatArea() {
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
               >
                 <MessageSquare size={14} style={{ color: 'var(--color-accent)' }} />
-                Set Up Messaging Channels
+                Configurar canales
               </button>
             </div>
           </div>
         ) : (
-          <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-6">
+          <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-4">
+            <div className="flex items-center justify-center mb-3">
+              <ZarekCore compact />
+            </div>
             {messages.map((msg, i) => {
               const isLastAssistant =
                 i === messages.length - 1 && msg.role === 'assistant';

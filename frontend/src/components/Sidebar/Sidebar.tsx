@@ -53,13 +53,13 @@ export function Sidebar() {
   };
 
   const navItems = [
-    { path: '/', icon: MessageSquare, label: 'Chat' },
-    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
-    { path: '/data-sources', icon: Database, label: 'Data Sources' },
-    { path: '/agents', icon: Bot, label: 'Agents' },
-    { path: '/logs', icon: ScrollText, label: 'Logs' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
-    { path: '/get-started', icon: Rocket, label: 'Get Started' },
+    { path: '/', icon: MessageSquare, label: 'Conversación' },
+    { path: '/dashboard', icon: BarChart3, label: 'Sistema' },
+    { path: '/data-sources', icon: Database, label: 'Fuentes de datos' },
+    { path: '/agents', icon: Bot, label: 'Módulos' },
+    { path: '/logs', icon: ScrollText, label: 'Registros' },
+    { path: '/settings', icon: Settings, label: 'Configuración' },
+    { path: '/get-started', icon: Rocket, label: 'Primeros pasos' },
   ];
 
   return (
@@ -102,6 +102,17 @@ export function Sidebar() {
             >
               <PanelLeftClose size={18} />
             </button>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 min-w-0 cursor-pointer"
+              title="ZAREK JARVIS AI"
+            >
+              <img src="/zarek-emblem.png" alt="" className="w-7 h-7 object-contain" />
+              <span className="flex flex-col items-start leading-none">
+                <span className="zarek-wordmark text-[11px]">ZAREK</span>
+                <span className="zarek-wordmark-sub text-[7px] mt-1">SYSTEMS</span>
+              </span>
+            </button>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => updateSettings({ theme: nextTheme })}
@@ -109,7 +120,7 @@ export function Sidebar() {
                 style={{ color: 'var(--color-text-secondary)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                title={`Theme: ${settings.theme} (click for ${nextTheme})`}
+                title={`Tema: ${settings.theme} (cambiar a ${nextTheme})`}
               >
                 <ThemeIcon size={16} />
               </button>
@@ -119,7 +130,7 @@ export function Sidebar() {
                 style={{ color: 'var(--color-text-secondary)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                title="New chat"
+                title="Nueva conversación"
               >
                 <Plus size={18} />
               </button>
@@ -163,7 +174,7 @@ export function Sidebar() {
                 className="text-[10px] px-1.5 py-0.5 rounded font-mono"
                 style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)' }}
               >
-                ⌘K
+                Ctrl+K
               </kbd>
             )}
           </button>
@@ -177,7 +188,7 @@ export function Sidebar() {
               <Search size={14} style={{ color: 'var(--color-text-tertiary)' }} />
               <input
                 type="text"
-                placeholder="Search chats..."
+                placeholder="Buscar conversaciones..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm"

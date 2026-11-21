@@ -182,7 +182,10 @@ export async function fetchModels(): Promise<ModelInfo[]> {
   if (isTauri()) {
     try {
       const result = await tauriInvoke<{ data?: ModelInfo[] }>('fetch_models');
-      return result?.data || [];
+      // The orchestrator can advertise optional NIM catalogue entries even
+      // when no cloud provider is configured. The desktop "installed" list
+      // must represent models that are actually usable on this machine.
+      return (result?.data || []).filter((model) => model.owned_by === 'openjarvis');
     } catch {
       // Fall through to fetch
     }

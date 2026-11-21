@@ -2815,30 +2815,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openjarvis-desktop"
-version = "1.0.1"
-dependencies = [
- "dispatch",
- "keyring",
- "objc",
- "reqwest",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-notification",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tokio",
- "toml_edit 0.25.18+spec-1.1.0",
-]
-
-[[package]]
 name = "openssl-probe"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6021,6 +5997,30 @@ dependencies = [
  "quote",
  "syn 2.0.118",
  "synstructure",
+]
+
+[[package]]
+name = "zarek-jarvis-desktop"
+version = "1.0.1"
+dependencies = [
+ "dispatch",
+ "keyring",
+ "objc",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-notification",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tokio",
+ "toml_edit 0.25.18+spec-1.1.0",
 ]
 
 [[package]]

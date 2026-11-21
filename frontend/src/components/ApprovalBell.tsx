@@ -80,7 +80,7 @@ export function ApprovalBell() {
       <button
         onClick={() => setOpen(o => !o)}
         className="relative p-2 rounded-lg transition-colors cursor-pointer"
-        title="Agent approvals"
+        title="Aprobaciones del agente"
         style={{
           color: count > 0 ? 'var(--color-text)' : 'var(--color-text-secondary)',
           background: open

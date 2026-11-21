@@ -56,17 +56,14 @@ function SetupFrame({ children }: { children: React.ReactNode }) {
     <div className="fixed inset-0 flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
       <div className="w-full max-w-lg px-6">
         <div className="text-center mb-8">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
-          >
-            <Cpu size={32} />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 zarek-setup-emblem">
+            <img src="/zarek-emblem.png" alt="" className="w-12 h-12 object-contain" />
           </div>
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-            Choose your inference source
+            Elija la fuente de inferencia
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Nothing is installed, started, or downloaded until you confirm a choice.
+            Nada se inicia ni descarga hasta que confirme una opción.
           </p>
         </div>
         <div
@@ -97,10 +94,10 @@ export function InferenceSourceChooser({
           <Cpu size={22} className="shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} />
           <span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-              Local Ollama
+              Ollama local
             </span>
             <span className="block text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-              Run models on this computer. Requires a separate confirmation before Ollama starts or a model downloads.
+              Ejecute modelos en este equipo. Se solicitará confirmación antes de iniciar Ollama o descargar un modelo.
             </span>
           </span>
         </button>
@@ -113,10 +110,10 @@ export function InferenceSourceChooser({
           <Server size={22} className="shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} />
           <span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-              OpenAI-compatible server
+              Servidor compatible con OpenAI
             </span>
             <span className="block text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-              Connect to LM Studio, vLLM, SGLang, llama.cpp, MLX, or another compatible endpoint. Ollama stays off.
+              Conecte LM Studio, vLLM, SGLang, llama.cpp, MLX u otro endpoint compatible. Ollama permanecerá apagado.
             </span>
           </span>
         </button>
@@ -125,7 +122,7 @@ export function InferenceSourceChooser({
   );
 }
 
-function BackButton({ onClick, label = 'Back', disabled = false }: { onClick: () => void; label?: string; disabled?: boolean }) {
+function BackButton({ onClick, label = 'Atrás', disabled = false }: { onClick: () => void; label?: string; disabled?: boolean }) {
   return (
     <button
       type="button"
@@ -159,7 +156,7 @@ export function InferenceRecoveryButton({
         background: 'var(--color-surface)',
       }}
     >
-      {recovering ? 'Stopping setup...' : 'Change inference source'}
+      {recovering ? 'Deteniendo configuración...' : 'Cambiar fuente de inferencia'}
     </button>
   );
 }
@@ -182,10 +179,10 @@ export function OllamaConsent({
         <Download size={22} className="shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} />
         <div>
           <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
-            Allow local model setup?
+            ¿Permitir la configuración del modelo local?
           </h2>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            OpenJarvis will start Ollama and may download one model selected for this computer. Model downloads can use several gigabytes of disk space and network data.
+            ZAREK iniciará Ollama y puede descargar el modelo seleccionado para este equipo. La descarga puede usar varios gigabytes de disco y datos de red.
           </p>
         </div>
       </div>
@@ -194,7 +191,7 @@ export function OllamaConsent({
         style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-text-secondary)' }}
       >
         <ShieldCheck size={16} className="shrink-0" style={{ color: 'var(--color-accent)' }} />
-        Going back leaves Ollama stopped and does not save this choice.
+        Volver atrás deja Ollama detenido y no guarda esta elección.
       </div>
       {error && <SetupError message={error} />}
       <button
@@ -205,7 +202,7 @@ export function OllamaConsent({
         style={{ background: 'var(--color-accent)', color: 'white' }}
       >
         {busy && <Loader2 size={16} className="animate-spin" />}
-        {busy ? 'Starting local setup...' : 'Use Ollama and continue'}
+        {busy ? 'Iniciando configuración local...' : 'Usar Ollama y continuar'}
       </button>
     </SetupFrame>
   );
@@ -262,18 +259,18 @@ export function CustomEndpointSetup({
 
   return (
     <SetupFrame>
-      <BackButton onClick={onCancel} label="Cancel" disabled={busy} />
+      <BackButton onClick={onCancel} label="Cancelar" disabled={busy} />
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div>
           <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
-            Connect your server
+            Conecte su servidor
           </h2>
           <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-            OpenJarvis will connect only after you submit this form. Ollama will not start or download models.
+            ZAREK solo se conectará después de enviar este formulario. Ollama no iniciará ni descargará modelos.
           </p>
         </div>
         <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          Server URL
+          URL del servidor
           <input
             aria-label="Server URL"
             type="url"
@@ -285,7 +282,7 @@ export function CustomEndpointSetup({
           />
         </label>
         <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          Model ID
+          ID del modelo
           <input
             aria-label="Model ID"
             type="text"
@@ -298,7 +295,7 @@ export function CustomEndpointSetup({
           />
         </label>
         <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          Server type
+          Tipo de servidor
           <select
             aria-label="Server type"
             value={engine}
@@ -314,7 +311,7 @@ export function CustomEndpointSetup({
           </select>
         </label>
         <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          API key (optional)
+          Clave de API (opcional)
           <input
             aria-label="API key"
             type="password"
@@ -333,7 +330,7 @@ export function CustomEndpointSetup({
           style={{ background: 'var(--color-accent)', color: 'white' }}
         >
           {busy && <Loader2 size={16} className="animate-spin" />}
-          {busy ? 'Connecting...' : 'Save and connect'}
+          {busy ? 'Conectando...' : 'Guardar y conectar'}
         </button>
       </form>
     </SetupFrame>

@@ -321,6 +321,10 @@ class KokoroTTSBackend(TTSBackend):
             "bf_isabella",
             "bm_george",
             "bm_lewis",
+            # Spanish
+            "ef_dora",
+            "em_alex",
+            "em_santa",
             # Mandarin Chinese
             "zf_xiaobei",
             "zf_xiaoni",

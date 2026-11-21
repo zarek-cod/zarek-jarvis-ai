@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { transcribeAudio, fetchSpeechHealth } from '../lib/api';
+import { attachMicrophoneReactivity, stopMicrophoneReactivity } from '../lib/audio-reactor';
 
 export type SpeechState = 'idle' | 'recording' | 'transcribing';
 
@@ -29,6 +30,7 @@ export function useSpeech() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      await attachMicrophoneReactivity(stream);
 
       const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
@@ -58,6 +60,7 @@ export function useSpeech() {
         setState('transcribing');
 
         // Stop all audio tracks
+        void stopMicrophoneReactivity();
         streamRef.current?.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
 
@@ -78,6 +81,11 @@ export function useSpeech() {
 
       recorder.stop();
     });
+  }, []);
+
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    void stopMicrophoneReactivity();
   }, []);
 
   return {

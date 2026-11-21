@@ -1,0 +1,72 @@
+# ZAREK JARVIS AI — configuración local predeterminada para Windows 11.
+# Instalar con: powershell -ExecutionPolicy Bypass -File scripts/zarek/setup.ps1
+
+[engine]
+default = "ollama"
+
+[engine.ollama]
+host = "http://127.0.0.1:11434"
+
+[intelligence]
+default_model = "qwen3.5:4b"
+model_chat = "qwen3.5:4b"
+model_short = "qwen3.5:2b"
+fallback_model = "qwen3.5:4b"
+temperature = 0.55
+max_tokens = 4096
+top_p = 0.9
+
+[agent]
+default_agent = "simple"
+system_prompt_path = "__ZAREK_SYSTEM_PROMPT__"
+context_from_memory = true
+
+[server]
+host = "127.0.0.1"
+port = 8000
+
+[speech]
+backend = "faster-whisper"
+model = "small"
+language = "es"
+device = "cpu"
+compute_type = "int8"
+tts_backend = "kokoro"
+voice_id = "em_alex"
+voice_speed = 0.96
+
+[system_prompt]
+include_current_time = true
+timezone = "America/Lima"
+
+[memory_files]
+persona_name = ""
+nudge_interval = 10
+
+[analytics]
+enabled = false
+
+[telemetry]
+enabled = true
+gpu_metrics = true
+gpu_poll_interval_ms = 250
+energy_vendor = "nvidia"
+
+[security]
+enabled = true
+profile = "personal"
+scan_input = true
+scan_output = true
+mode = "redact"
+secret_scanner = true
+pii_scanner = true
+enforce_tool_confirmation = true
+ssrf_protection = true
+rate_limit_enabled = true
+allowed_dirs = ["__ZAREK_ALLOWED_DIR__"]
+
+[tools.storage]
+enabled = true
+backend = "local"
+context_top_k = 5
+context_max_tokens = 1536

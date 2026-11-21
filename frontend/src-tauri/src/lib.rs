@@ -8,12 +8,13 @@ use tokio::sync::Mutex;
 
 const OLLAMA_PORT: u16 = 11434;
 const JARVIS_PORT: u16 = 8000;
+const ZAREK_REPOSITORY_URL: &str = "https://github.com/zarek-cod/zarek-jarvis-ai.git";
 #[cfg(not(all(target_os = "windows", target_arch = "aarch64")))]
 const DESKTOP_UV_SYNC_COMMAND: &str =
-    "uv sync --extra desktop --extra inference-cloud --extra inference-google --group desktop-native";
+    "uv sync --extra desktop --extra voice --extra inference-cloud --extra inference-google --group desktop-native";
 #[cfg(all(target_os = "windows", target_arch = "aarch64"))]
 const DESKTOP_UV_SYNC_COMMAND: &str =
-    "uv sync --python cpython-3.12-windows-x86_64-none --extra desktop --extra inference-cloud --extra inference-google --group desktop-native";
+    "uv sync --python cpython-3.12-windows-x86_64-none --extra desktop --extra voice --extra inference-cloud --extra inference-google --group desktop-native";
 
 /// Small, fast model used when startup needs a default Ollama tag.
 const STARTUP_MODEL: &str = "qwen3.5:4b";
@@ -1317,13 +1318,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
 
         let mut clone_cmd = tokio::process::Command::new(&git_bin);
         clone_cmd
-            .args([
-                "clone",
-                "--depth",
-                "1",
-                "https://github.com/open-jarvis/OpenJarvis.git",
-                &clone_target,
-            ])
+            .args(["clone", "--depth", "1", ZAREK_REPOSITORY_URL, &clone_target])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::piped());
         prepare_subprocess_for_appimage(&mut clone_cmd);
@@ -1338,9 +1333,10 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     let mut s = status.lock().await;
                     s.error = Some(format!(
-                        "Failed to download OpenJarvis: {}. \
-                         Clone manually: git clone https://github.com/open-jarvis/OpenJarvis.git {}",
+                        "Failed to download ZAREK: {}. \
+                         Clone manually: git clone {} {}",
                         stderr.trim(),
+                        ZAREK_REPOSITORY_URL,
                         clone_target,
                     ));
                     return;
@@ -1348,9 +1344,9 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 Err(e) => {
                     let mut s = status.lock().await;
                     s.error = Some(format!(
-                        "Failed to download OpenJarvis: {}. \
-                         Clone manually: git clone https://github.com/open-jarvis/OpenJarvis.git {}",
-                        e, clone_target,
+                        "Failed to download ZAREK: {}. \
+                         Clone manually: git clone {} {}",
+                        e, ZAREK_REPOSITORY_URL, clone_target,
                     ));
                     return;
                 }
@@ -1531,6 +1527,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             "sync",
             "--extra",
             "desktop",
+            "--extra",
+            "voice",
             "--extra",
             "inference-cloud",
             "--extra",
@@ -3375,11 +3373,11 @@ pub fn run() {
         }))
         .setup(move |app| {
             // System tray
-            let show = MenuItemBuilder::with_id("show", "Show / Hide").build(app)?;
-            let health = MenuItemBuilder::with_id("health", "Health: starting...")
+            let show = MenuItemBuilder::with_id("show", "Mostrar / Ocultar").build(app)?;
+            let health = MenuItemBuilder::with_id("health", "Estado: iniciando...")
                 .enabled(false)
                 .build(app)?;
-            let quit = MenuItemBuilder::with_id("quit", "Quit OpenJarvis").build(app)?;
+            let quit = MenuItemBuilder::with_id("quit", "Salir de ZAREK").build(app)?;
 
             let menu = MenuBuilder::new(app)
                 .item(&show)
@@ -3391,7 +3389,7 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::with_id("main")
                 .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("OpenJarvis")
+                .tooltip("ZAREK JARVIS AI")
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {
@@ -3417,12 +3415,17 @@ pub fn run() {
                 native_overlay::create(include_str!("overlay.html"), JARVIS_PORT);
             }
 
-            // Register Cmd+Shift+Space to toggle the overlay
+            // Register the native platform shortcut: Cmd on macOS, Ctrl elsewhere.
             {
                 use tauri_plugin_global_shortcut::{
                     Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
                 };
-                let sc = Shortcut::new(Some(Modifiers::META | Modifiers::SHIFT), Code::Space);
+                #[cfg(target_os = "macos")]
+                let primary_modifier = Modifiers::META;
+                #[cfg(not(target_os = "macos"))]
+                let primary_modifier = Modifiers::CONTROL;
+
+                let sc = Shortcut::new(Some(primary_modifier | Modifiers::SHIFT), Code::Space);
                 if let Err(e) = app.global_shortcut().on_shortcut(sc, |_app, _sc, ev| {
                     if ev.state == ShortcutState::Pressed {
                         #[cfg(target_os = "macos")]
@@ -3431,7 +3434,7 @@ pub fn run() {
                         }
                     }
                 }) {
-                    eprintln!("Warning: could not register Cmd+Shift+Space: {e}");
+                    eprintln!("Warning: could not register the ZAREK global shortcut: {e}");
                 }
             }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { synthesizeSpeech, fetchTtsHealth } from './api';
 import { toSpeakableText } from './message-text';
+import { attachPlaybackReactivity, stopPlaybackReactivity } from './audio-reactor';
 
 export type TtsState = 'idle' | 'loading' | 'speaking';
 
@@ -53,6 +54,7 @@ export function shouldAutoplayFinishedReply(
 }
 
 function teardown(): void {
+  void stopPlaybackReactivity();
   if (audio) {
     // Detach first: clearing src re-runs the media load algorithm, which fails
     // on an empty source and dispatches an `error` event. With the handler
@@ -120,6 +122,7 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
       objectUrl = url;
       const el = new Audio(url);
       audio = el;
+      await attachPlaybackReactivity(el);
 
       el.onended = () => {
         if (mine !== token) return;

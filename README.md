@@ -1,4 +1,16 @@
 <div align="center">
+  <img alt="Emblema ZAREK" src="frontend/public/zarek-emblem.png" width="128">
+  <h1>ZAREK JARVIS AI</h1>
+  <p><strong>Asistente personal local para Windows 11, con Qwen3.5, voz y privacidad por diseño.</strong></p>
+</div>
+
+Esta rama pública contiene la adaptación ZAREK SYSTEMS construida sobre OpenJarvis. La ruta recomendada para Windows está en [README-ZAREK.md](README-ZAREK.md); el registro completo de auditoría, implementación y pruebas está en [docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md](docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md).
+
+> No se incluyen claves privadas, credenciales ni configuraciones personales. La inferencia, la transcripción y la voz predeterminadas funcionan localmente.
+
+---
+
+<div align="center">
   <img alt="OpenJarvis" src="assets/OpenJarvis_Horizontal_Logo.png" width="400">
 
   <p><i>Personal AI, On Personal Devices.</i></p>

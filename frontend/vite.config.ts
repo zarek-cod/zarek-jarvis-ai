@@ -25,11 +25,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'OpenJarvis',
-        short_name: 'Jarvis',
-        description: 'On-device AI assistant',
-        theme_color: '#161618',
-        background_color: '#161618',
+        name: 'ZAREK JARVIS AI',
+        short_name: 'ZAREK',
+        description: 'Asistente personal local de ZAREK SYSTEMS',
+        theme_color: '#020811',
+        background_color: '#020811',
         display: 'standalone',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
