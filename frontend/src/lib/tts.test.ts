@@ -91,6 +91,31 @@ describe('shared voice output', () => {
     expect(useTtsStore.getState().speakingId).toBe('m1');
   });
 
+  it('prefetches and plays a long reply phrase by phrase in order', async () => {
+    synth.mockResolvedValue(new Blob(['wav']));
+    await useTtsStore.getState().speak('long', `${'Primera frase extensa '.repeat(12)}. ${'Segunda frase extensa '.repeat(12)}.`);
+    expect(synth.mock.calls.length).toBeGreaterThanOrEqual(2);
+    const first = FakeAudio.instances[0];
+    first.onended?.();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(FakeAudio.instances.length).toBeGreaterThanOrEqual(2);
+    expect(useTtsStore.getState().speakingId).toBe('long');
+  });
+
+  it('queues streamed phrases for the same reply without restarting playback', async () => {
+    synth.mockResolvedValue(new Blob(['wav']));
+    await useTtsStore.getState().enqueue('stream', 'Primera frase.');
+    const first = FakeAudio.instances[0];
+    await useTtsStore.getState().enqueue('stream', 'Segunda frase.');
+    expect(first.paused).toBe(false);
+    expect(FakeAudio.instances).toHaveLength(1);
+    first.onended?.();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(FakeAudio.instances).toHaveLength(2);
+  });
+
   it('starting a second message stops the first instead of overlapping it', async () => {
     synth.mockResolvedValue(new Blob(['wav']));
 

@@ -9,15 +9,19 @@ ZAREK JARVIS AI es una adaptación local-first de OpenJarvis para Windows 11. Co
 - Modelo principal `qwen3.5:4b` y modelo rápido opcional `qwen3.5:2b`.
 - Personalidad editable en `configs/zarek/ZAREK-SYSTEM.md`.
 - Dictado local con Faster-Whisper.
+- Transcripción española con VAD, confianza, filtro de silencio/alucinaciones y respaldo automático de CUDA a CPU.
 - Selector completo de micrófonos de Windows con nivel en vivo, prueba y procesamiento configurable.
 - Activación local “Jarvis” opcional, palabra configurable y escucha continua solo con consentimiento.
 - Atajo global `Ctrl + Shift + Espacio`, botón de micrófono e interrupción de voz.
 - Voz masculina española local con Kokoro (`em_alex`).
+- TTS progresivo por frases, precarga de audio e interrupción sin duplicados.
 - ElevenLabs disponible como proveedor opcional; no se incluye ninguna clave.
 - Núcleo Canvas 2D con estados standby/listening/thinking/speaking/executing.
 - Reacción verdadera a audio mediante `AudioContext` y `AnalyserNode` (FFT de graves, medios y agudos).
 - Historial, memoria, métricas de GPU y credenciales de inferencia protegidas por Windows Credential Manager, heredadas de OpenJarvis.
 - Aplicación de escritorio Tauri con bandeja, atajo global, notificaciones y autostart.
+- Carpetas autorizadas configurables y persistentes para las herramientas de archivos.
+- Calidad gráfica Baja, Equilibrada o Ultra para adaptar galaxias, partículas y núcleo al equipo.
 - Actualizaciones de escritorio sin frontend obsoleto: el instalador limpia solamente el caché de service worker heredado y conserva conversaciones y preferencias.
 
 ## Inicio rápido
@@ -47,7 +51,7 @@ Consulte `INSTALL-WINDOWS.md`, `VOICE-SETUP.md` y `SECURITY.md` antes de habilit
 
 ## Registro integral de implementación y auditoría
 
-La revisión completa —inventario del equipo, herramientas instaladas, arquitectura, archivos modificados, pruebas reales, métricas, privacidad, limitaciones y procedimiento de publicación— está documentada en [`docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md`](docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md). Los resultados resumidos y reproducibles están en [`VALIDATION.md`](VALIDATION.md).
+La auditoría original está en [`docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md`](docs/ZAREK-AUDIT-AND-IMPLEMENTATION.md), la implementación de V1.2 en [`docs/ZAREK-V1.2-IMPLEMENTATION.md`](docs/ZAREK-V1.2-IMPLEMENTATION.md) y los resultados reproducibles en [`VALIDATION.md`](VALIDATION.md).
 
 ## Licencias y atribución
 

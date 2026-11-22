@@ -1,6 +1,45 @@
 # Validación de ZAREK JARVIS AI
 
-Fecha: 2026-11-21 (America/Lima).
+Fecha de última validación: 2026-11-22 (America/Lima).
+
+## Versión 1.2.0 — validación final (2026-11-22)
+
+| Prueba | Resultado observado |
+|---|---|
+| Frontend Vitest | 139/139 correctas |
+| Rust/Tauri | 51/51 correctas |
+| Backend dirigido de voz/API | 36/36 correctas |
+| Backend ampliado (voz, herramientas, seguridad y API) | 2.016 correctas, 32 omitidas |
+| Aplicación instalada | `FileVersion` y `ProductVersion` 1.2.0 |
+| Backend instalado | Conectado, `multi / qwen3.5:4b` |
+| Modo Voz | Ruta separada, núcleo grande, sin caja de escritura |
+| Markdown | Títulos y listas observados como elementos renderizados, no texto crudo |
+| Escucha continua | Visible como `Esperando “Jarvis”`; depende del consentimiento guardado |
+| Audio sin voz | Descartado; no se creó ni envió una orden falsa |
+| Kokoro local | `em_alex`, velocidad 0.96, WAV 24 kHz |
+| STT real | Español, respuesta 200, confianza 0,644, no-voz 0,075 |
+| Respaldo CUDA | Error real por `cublas64_12.dll` recuperado con CPU `int8` |
+| Instalador NSIS | Generado, instalado y abierto correctamente |
+
+Mediciones reales de la instalación:
+
+- Kokoro: 3.470 ms en la primera síntesis medida y 1.004 ms en la segunda; WAV de 187.244 bytes.
+- Faster-Whisper: 4.316 ms para audio español de 2,325 s. Produjo `Carvis, dime la hora, por favor.`; la tolerancia de una edición de la activación acepta esa variación de “Jarvis”.
+- Modelo `qwen3.5:4b` en caliente: cabeceras en 32 ms, primer contenido en 4.540 ms y respuesta completa en 4.542 ms para una frase corta.
+- La salida progresiva entrega la primera oración a TTS antes de terminar una respuesta larga y precarga las siguientes; se evita afirmar una reducción fija porque cambia con cada texto.
+
+Artefacto final:
+
+- Instalador: `C:\Users\joels\Desktop\Jarvis\frontend\src-tauri\target\release\bundle\nsis\ZAREK JARVIS AI_1.2.0_x64-setup.exe`
+- Tamaño: 8.201.683 bytes.
+- SHA-256: `A269FA4A92CF50EC311F588DFF7CC2D5A42625F0C3C0D84F85B935DC7E881BA4`.
+- Ejecutable instalado: `C:\Users\joels\AppData\Local\ZAREK JARVIS AI\zarek-jarvis-desktop.exe`.
+- Acceso directo: `C:\Users\joels\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\ZAREK SYSTEMS\ZAREK JARVIS AI.lnk`.
+- Firma Authenticode: no disponible en esta edición comunitaria.
+
+La carpeta `Pruebas` se creó dentro del directorio autorizado para dejar evidencia revisable de la política `allowed_dirs`. Los detalles de implementación y límites están en `docs/ZAREK-V1.2-IMPLEMENTATION.md`.
+
+Las 32 omisiones ampliadas corresponden a condiciones declaradas por plataforma o dependencias opcionales. Las pruebas de bits POSIX `0600/0700` se omiten en Windows porque `st_mode` no verifica una ACL de NTFS. La ejecución aislada sí se corrigió y probó con grupos de procesos y finalización de árbol específicos de Windows.
 
 ## Versión 1.1.0 — validación final
 

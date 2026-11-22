@@ -92,6 +92,7 @@ function saveConversations(store: ConversationStore): void {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type GraphicsQuality = 'low' | 'balanced' | 'ultra';
 
 export interface Settings {
   theme: ThemeMode;
@@ -101,10 +102,13 @@ export interface Settings {
   // frontend (#266). Empty = no auth header (keyless local default).
   apiKey: string;
   fontSize: 'small' | 'default' | 'large';
+  graphicsQuality: GraphicsQuality;
   defaultModel: string;
   defaultAgent: string;
   temperature: number;
   maxTokens: number;
+  speechLanguage: string;
+  transcriptionConfidence: number;
   speechEnabled: boolean;
   voiceOutputEnabled: boolean;
   voiceAutoplay: boolean;
@@ -130,10 +134,13 @@ function loadSettings(): Settings {
     apiUrl: '',
     apiKey: '',
     fontSize: 'default',
+    graphicsQuality: 'balanced',
     defaultModel: '',
     defaultAgent: '',
     temperature: 0.7,
-    maxTokens: 4096,
+    maxTokens: 8192,
+    speechLanguage: 'es',
+    transcriptionConfidence: 0.18,
     speechEnabled: false,
     voiceOutputEnabled: true,
     voiceAutoplay: true,

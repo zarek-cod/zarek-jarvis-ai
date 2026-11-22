@@ -263,6 +263,15 @@ class ToolTemplate(BaseTool):
                 content="Empty command.",
                 success=False,
             )
+        # ``echo`` is a shell built-in on Windows, so there is no executable
+        # that can be launched with ``shell=False``.  Emulate this one benign
+        # built-in without invoking a shell; parameter values remain inert.
+        if argv[0].casefold() == "echo":
+            return ToolResult(
+                tool_name=self._name,
+                content=" ".join(argv[1:]),
+                success=True,
+            )
         result = subprocess.run(  # noqa: S603
             argv,
             shell=False,

@@ -112,6 +112,15 @@ export function AudioSettingsPanel() {
           <Row title="Entrada por voz" description="Habilita el botón de micrófono y la transcripción local.">
             <Toggle label="Entrada por voz" checked={settings.speechEnabled} onChange={(speechEnabled) => update({ speechEnabled })} />
           </Row>
+          <Row title="Idioma de reconocimiento" description="Español está fijado para evitar autodetecciones erróneas; puedes cambiarlo aquí.">
+            <select value={settings.speechLanguage} onChange={(event) => update({ speechLanguage: event.target.value })}>
+              <option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option>
+            </select>
+          </Row>
+          <Row title="Confianza mínima" description={`${Math.round(settings.transcriptionConfidence * 100)}% · descarta ruido y órdenes dudosas`}>
+            <input type="range" min="0.08" max="0.6" step="0.02" value={settings.transcriptionConfidence}
+              onChange={(event) => update({ transcriptionConfidence: Number(event.target.value) })} />
+          </Row>
           <Row title="Sensibilidad" description={`${Math.round(settings.microphoneSensitivity * 100)}% · umbral de voz`}>
             <input type="range" min="0.02" max="0.5" step="0.01" value={settings.microphoneSensitivity}
               onChange={(event) => update({ microphoneSensitivity: Number(event.target.value) })} />

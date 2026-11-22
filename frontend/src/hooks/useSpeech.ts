@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { transcribeAudio, fetchSpeechHealth } from '../lib/api';
-import { applyMicrophoneGain, buildAudioConstraints, rmsLevel } from '../lib/audio-input';
+import { applyMicrophoneGain, assessTranscription, openMicrophone, rmsLevel } from '../lib/audio-input';
 import { attachMicrophoneReactivity, stopMicrophoneReactivity } from '../lib/audio-reactor';
 import { useAppStore } from '../lib/store';
 import { useTtsStore } from '../lib/tts';
+import { useVoiceLatencyStore } from '../lib/voice-latency';
 
 export type SpeechState = 'idle' | 'recording' | 'transcribing';
 
@@ -25,6 +26,7 @@ export function useSpeech({ onTranscript }: UseSpeechOptions = {}) {
   const resolveRef = useRef<((text: string) => void) | null>(null);
   const rejectRef = useRef<((error: unknown) => void) | null>(null);
   const callbackRef = useRef(onTranscript);
+  const captureStartedRef = useRef(0);
   callbackRef.current = onTranscript;
 
   useEffect(() => {
@@ -53,9 +55,11 @@ export function useSpeech({ onTranscript }: UseSpeechOptions = {}) {
 
     useTtsStore.getState().stop();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: buildAudioConstraints(settings),
-      });
+      const opened = await openMicrophone(settings);
+      const stream = opened.stream;
+      if (opened.fellBackToDefault) {
+        useAppStore.getState().updateSettings({ audioInputDeviceId: 'default' });
+      }
       streamRef.current = stream;
       const track = stream.getAudioTracks()[0];
       await applyMicrophoneGain(track, settings.microphoneGain);
@@ -75,15 +79,26 @@ export function useSpeech({ onTranscript }: UseSpeechOptions = {}) {
         rejectRef.current = reject;
       });
       recorder.onstop = async () => {
+        useVoiceLatencyStore.getState().setCapture(performance.now() - captureStartedRef.current);
         setState('transcribing');
         cleanupCapture();
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
         chunksRef.current = [];
         try {
-          const result = await transcribeAudio(blob);
-          const text = result.text.trim();
+          const sttStartedAt = performance.now();
+          const result = await transcribeAudio(blob, 'recording.webm', settings.speechLanguage);
+          useVoiceLatencyStore.getState().setStt(performance.now() - sttStartedAt);
+          const assessment = assessTranscription(
+            result,
+            settings.speechLanguage,
+            settings.transcriptionConfidence,
+          );
+          const text = assessment.accepted ? assessment.text : '';
           setState('idle');
           if (text) callbackRef.current?.(text);
+          if (!assessment.accepted) {
+            setError('No entendí una voz clara. Inténtalo de nuevo un poco más cerca del micrófono.');
+          }
           resolveRef.current?.(text);
         } catch (cause) {
           setState('idle');
@@ -96,6 +111,7 @@ export function useSpeech({ onTranscript }: UseSpeechOptions = {}) {
         }
       };
       mediaRecorderRef.current = recorder;
+      captureStartedRef.current = performance.now();
       recorder.start(200);
       setState('recording');
 
@@ -114,16 +130,26 @@ export function useSpeech({ onTranscript }: UseSpeechOptions = {}) {
         const samples = new Uint8Array(analyser.fftSize);
         const startedAt = performance.now();
         let hasSpeech = false;
+        let speechStartedAt = 0;
+        let noiseFloor = 0.015;
+        let calibrationSamples = 0;
         let lastSpeech = startedAt;
         const monitor = (now: number) => {
           analyser.getByteTimeDomainData(samples);
-          if (rmsLevel(samples) >= settings.microphoneSensitivity) {
+          const level = rmsLevel(samples);
+          if (!hasSpeech && calibrationSamples < 24) {
+            noiseFloor = (noiseFloor * calibrationSamples + level) / (calibrationSamples + 1);
+            calibrationSamples += 1;
+          }
+          const threshold = Math.max(settings.microphoneSensitivity, noiseFloor * 2.15);
+          if (level >= threshold) {
+            if (!hasSpeech) speechStartedAt = now;
             hasSpeech = true;
             lastSpeech = now;
           }
           if (
             recorder.state === 'recording'
-            && ((hasSpeech && now - lastSpeech >= settings.silenceTimeoutMs) || now - startedAt >= 20_000)
+            && ((hasSpeech && now - speechStartedAt >= 320 && now - lastSpeech >= settings.silenceTimeoutMs) || now - startedAt >= 20_000)
           ) {
             recorder.stop();
             return;

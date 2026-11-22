@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toSpeakableText } from './message-text';
+import { splitSpeakableText, toSpeakableText } from './message-text';
 
 describe('toSpeakableText', () => {
   it('removes emphasis markers so they are not read aloud', () => {
@@ -27,5 +27,14 @@ describe('toSpeakableText', () => {
 
   it('keeps snake_case words intact', () => {
     expect(toSpeakableText('use file_read now')).toBe('use file_read now');
+  });
+});
+
+describe('splitSpeakableText', () => {
+  it('creates natural ordered chunks without markdown symbols', () => {
+    const chunks = splitSpeakableText('## Resumen\n**Primero**, una frase. Después, otra explicación bastante clara.', 35);
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.join(' ')).not.toMatch(/[#*]/);
+    expect(chunks.join(' ')).toContain('Primero');
   });
 });

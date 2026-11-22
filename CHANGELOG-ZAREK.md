@@ -1,5 +1,20 @@
 # Changelog ZAREK
 
+## 2026-11-22 — v1.2.0
+
+- STT español con VAD explícito, confianza, probabilidad de no-voz y conservación de la transcripción original.
+- Filtro de silencio, repeticiones, idioma inesperado y la alucinación conocida `Поехали`.
+- Intento automático RTX/CUDA y respaldo transparente a CPU `int8` cuando falta el runtime cuBLAS/cuDNN.
+- Activación “Jarvis” con tolerancia fonética limitada, armado sin ejecución para la palabra aislada y detección configurable.
+- Cola TTS por frases con precarga, cancelación segura e interrupción sin reinicios ni duplicados.
+- Métricas visibles de captura/VAD, STT, primer token y TTS.
+- Markdown compartido y legible en Chat y Modo Voz, con respuestas largas desplazables.
+- Presupuesto de respuesta dinámico hasta 8.192 tokens según complejidad.
+- Nueva administración persistente de carpetas autorizadas, con validación de rutas absolutas existentes.
+- Aislador de subprocesos compatible con Windows y pruebas POSIX de permisos omitidas explícitamente en NTFS.
+- Escenario galáctico, parallax y calidad gráfica Baja/Equilibrada/Ultra.
+- Instalador y ejecutable Windows actualizados a 1.2.0.
+
 ## 2026-11-21 — v1.1.0
 
 - Rediseño premium con escenario ambiental, auroras, partículas, rayos, cristales oscuros y núcleo holográfico reactivo.

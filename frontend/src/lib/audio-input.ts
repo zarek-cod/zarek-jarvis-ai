@@ -1,4 +1,5 @@
 import type { Settings } from './store';
+import type { TranscriptionResult } from './api';
 
 export type AudioCaptureSettings = Pick<
   Settings,
@@ -20,6 +21,30 @@ export function buildAudioConstraints(settings: AudioCaptureSettings): MediaTrac
     echoCancellation: settings.echoCancellation,
     autoGainControl: settings.autoGainControl,
   };
+}
+
+/** Open the selected device and recover transparently when Windows removed it. */
+export async function openMicrophone(
+  settings: AudioCaptureSettings,
+): Promise<{ stream: MediaStream; fellBackToDefault: boolean }> {
+  try {
+    return {
+      stream: await navigator.mediaDevices.getUserMedia({ audio: buildAudioConstraints(settings) }),
+      fellBackToDefault: false,
+    };
+  } catch (error) {
+    const selected = settings.audioInputDeviceId && settings.audioInputDeviceId !== 'default';
+    const name = error instanceof DOMException ? error.name : '';
+    if (!selected || !['NotFoundError', 'OverconstrainedError', 'DevicesNotFoundError'].includes(name)) {
+      throw error;
+    }
+    return {
+      stream: await navigator.mediaDevices.getUserMedia({
+        audio: buildAudioConstraints({ ...settings, audioInputDeviceId: 'default' }),
+      }),
+      fellBackToDefault: true,
+    };
+  }
 }
 
 export async function applyMicrophoneGain(
@@ -48,7 +73,7 @@ export function rmsLevel(data: Uint8Array): number {
   return Math.min(1, Math.sqrt(sum / Math.max(1, data.length)) * 3.4);
 }
 
-function normalizeSpeech(value: string): string {
+export function normalizeSpeech(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -82,6 +107,8 @@ function isWakeWordMatch(candidate: string, target: string): boolean {
 export interface WakeCommandResult {
   detected: boolean;
   command: string;
+  /** Exact recognizer output before wake-word normalization. */
+  rawTranscript: string;
 }
 
 export function extractWakeCommand(
@@ -91,17 +118,73 @@ export function extractWakeCommand(
 ): WakeCommandResult {
   const normalized = normalizeSpeech(transcript);
   const target = normalizeSpeech(wakeWord) || 'jarvis';
-  if (alreadyArmed) return { detected: true, command: transcript.trim() };
+  if (alreadyArmed) return {
+    detected: true,
+    command: transcript.trim(),
+    rawTranscript: transcript.trim(),
+  };
 
-  const words = normalized.split(' ');
+  const originalWords = transcript.trim().split(/\s+/).filter(Boolean);
+  const words = originalWords.map((word) => normalizeSpeech(word));
   const wakeWords = target.split(' ');
   const start = words.findIndex((_, index) =>
     wakeWords.every((part, offset) => isWakeWordMatch(words[index + offset] || '', part)),
   );
-  if (start < 0) return { detected: false, command: '' };
+  if (start < 0) return { detected: false, command: '', rawTranscript: transcript.trim() };
 
-  const command = words.slice(start + wakeWords.length).join(' ').trim();
-  return { detected: true, command };
+  const command = originalWords
+    .slice(start + wakeWords.length)
+    .join(' ')
+    .replace(/^[\s,.;:!?-]+/, '')
+    .trim();
+  return { detected: true, command, rawTranscript: transcript.trim() };
+}
+
+export interface TranscriptionAssessment {
+  accepted: boolean;
+  text: string;
+  reason?: 'empty' | 'silence' | 'low-confidence' | 'wrong-language' | 'hallucination';
+}
+
+const SILENCE_HALLUCINATIONS = new Set([
+  'поехали', 'спасибо за просмотр', 'thank you for watching',
+  'subtitles by', 'amara org', 'gracias por ver', 'suscríbete',
+]);
+
+/**
+ * Gate STT output before it can become either a prompt or an executable order.
+ * The raw text remains untouched; normalization is used only for comparisons.
+ */
+export function assessTranscription(
+  result: TranscriptionResult,
+  expectedLanguage = 'es',
+  minimumConfidence = 0.18,
+): TranscriptionAssessment {
+  const text = result.text.trim();
+  if (!text) return { accepted: false, text, reason: 'empty' };
+  if ((result.no_speech_probability ?? 0) >= 0.68) {
+    return { accepted: false, text, reason: 'silence' };
+  }
+  const normalized = normalizeSpeech(text);
+  if ([...SILENCE_HALLUCINATIONS].some((phrase) => normalized === normalizeSpeech(phrase))) {
+    return { accepted: false, text, reason: 'hallucination' };
+  }
+  if (result.confidence != null && result.confidence < minimumConfidence) {
+    return { accepted: false, text, reason: 'low-confidence' };
+  }
+  if (
+    expectedLanguage
+    && result.language
+    && result.language.toLowerCase() !== expectedLanguage.toLowerCase()
+    && (result.confidence ?? 0) >= 0.45
+  ) {
+    return { accepted: false, text, reason: 'wrong-language' };
+  }
+  const words = normalized.split(' ').filter(Boolean);
+  if (words.length >= 6 && new Set(words).size <= 2) {
+    return { accepted: false, text, reason: 'hallucination' };
+  }
+  return { accepted: true, text };
 }
 
 export function playWakeChime(): void {

@@ -6,6 +6,8 @@ import { streamChat, streamResearch } from '../../lib/sse';
 import { fetchSavings, getBase, authHeaders } from '../../lib/api';
 import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
+import { resolveResponseBudget } from '../../lib/response-budget';
+import { useVoiceLatencyStore } from '../../lib/voice-latency';
 import {
   engineFromCompletionChunk,
   resolveChatEngine,
@@ -220,6 +222,7 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
 
     // Start streaming
     const startTime = Date.now();
+    if (variant === 'voice') useVoiceLatencyStore.getState().startLlm();
     const timer = setInterval(() => {
       setStreamState({ elapsedMs: Date.now() - startTime });
     }, 100);
@@ -239,6 +242,7 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
       Array.from(researchSourcesByRef.values()).sort((a, b) => a.ref - b.ref);
     let lastFlush = 0;
     let ttftMs: number | undefined;
+    const responseTokenBudget = resolveResponseBudget(content, maxTokens);
 
     setStreamState({
       conversationId: convId,
@@ -315,7 +319,10 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
               flushSources(),
             );
           } else if (ev.type === 'synthesis') {
-            if (!ttftMs) ttftMs = Date.now() - startTime;
+            if (!ttftMs) {
+              ttftMs = Date.now() - startTime;
+              if (variant === 'voice') useVoiceLatencyStore.getState().setLlmTtft(ttftMs);
+            }
             accumulatedContent += ev.text;
             setStreamState({ content: accumulatedContent, phase: '' });
             const now = Date.now();
@@ -384,7 +391,7 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
         }
       } else {
       for await (const sseEvent of streamChat(
-        { model: selectedModel, messages: apiMessages, stream: true, temperature, max_tokens: maxTokens },
+        { model: selectedModel, messages: apiMessages, stream: true, temperature, max_tokens: responseTokenBudget },
         controller.signal,
       )) {
         const eventName = sseEvent.event;
@@ -442,7 +449,10 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
             if (data.complexity) complexity = data.complexity;
             routedEngine = engineFromCompletionChunk(data) ?? routedEngine;
             if (delta?.content) {
-              if (!ttftMs) ttftMs = Date.now() - startTime;
+              if (!ttftMs) {
+                ttftMs = Date.now() - startTime;
+                if (variant === 'voice') useVoiceLatencyStore.getState().setLlmTtft(ttftMs);
+              }
               accumulatedContent += delta.content;
               setStreamState({ content: accumulatedContent, phase: '' });
 
@@ -482,6 +492,7 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
         accumulatedContent = 'No response was generated. Please try again.';
       }
       const totalMs = Date.now() - startTime;
+      if (variant === 'voice') useVoiceLatencyStore.getState().setLlmTotal(totalMs);
       const appState = useAppStore.getState();
       const selectedOwner = appState.models.find((m) => m.id === selectedModel)?.owned_by;
       const engineLabel = resolveChatEngine({
@@ -560,6 +571,7 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
     deepResearch,
     temperature,
     maxTokens,
+    variant,
   ]);
 
   useEffect(() => {

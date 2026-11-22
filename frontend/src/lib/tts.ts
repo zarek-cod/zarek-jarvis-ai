@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { synthesizeSpeech, fetchTtsHealth } from './api';
-import { toSpeakableText } from './message-text';
+import { splitSpeakableText } from './message-text';
 import { attachPlaybackReactivity, stopPlaybackReactivity } from './audio-reactor';
 
 export type TtsState = 'idle' | 'loading' | 'speaking';
@@ -23,7 +23,11 @@ interface TtsStore {
   available: boolean | null;
   /** Last message spoken by autoplay, so a re-render never repeats it. */
   autoSpokenId: string | null;
+  /** Time from speak() to the first audible chunk. */
+  firstAudioMs: number | null;
   speak: (id: string, text: string) => Promise<void>;
+  /** Append a completed streaming phrase without interrupting the same reply. */
+  enqueue: (id: string, text: string) => Promise<void>;
   stop: () => void;
   ensureHealth: () => Promise<void>;
   markAutoSpoken: (id: string) => void;
@@ -36,6 +40,9 @@ let objectUrl: string | null = null;
 let controller: AbortController | null = null;
 let token = 0;
 let healthProbe: Promise<void> | null = null;
+let queuedChunks: string[] = [];
+let preparedChunk: Promise<{ blob?: Blob; error?: unknown }> | null = null;
+let primeQueue: (() => void) | null = null;
 
 /** Only a stream ending in the active conversation may trigger autoplay. */
 export function shouldAutoplayFinishedReply(
@@ -74,6 +81,24 @@ function teardown(): void {
     controller.abort();
     controller = null;
   }
+  queuedChunks = [];
+  preparedChunk = null;
+  primeQueue = null;
+}
+
+function releaseCurrentAudio(): void {
+  void stopPlaybackReactivity();
+  if (audio) {
+    audio.onended = null;
+    audio.onerror = null;
+    audio.pause();
+    audio.src = '';
+    audio = null;
+  }
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+  }
 }
 
 export const useTtsStore = create<TtsStore>((set, get) => ({
@@ -83,6 +108,7 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
   errorId: null,
   available: null,
   autoSpokenId: null,
+  firstAudioMs: null,
 
   ensureHealth: () => {
     if (healthProbe) return healthProbe;
@@ -100,44 +126,35 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
 
   markAutoSpoken: (id: string) => set({ autoSpokenId: id }),
 
+  enqueue: async (id: string, text: string) => {
+    const chunks = splitSpeakableText(text);
+    if (chunks.length === 0) return;
+    const current = get();
+    if (current.speakingId === id && current.state !== 'idle') {
+      queuedChunks.push(...chunks);
+      primeQueue?.();
+      return;
+    }
+    await current.speak(id, text);
+  },
+
   speak: async (id: string, text: string) => {
-    const trimmed = toSpeakableText(text);
-    if (!trimmed) return;
+    const chunks = splitSpeakableText(text);
+    if (chunks.length === 0) return;
 
     // Bump before teardown so a synthesis still in flight is both aborted and
     // fenced off by the token, even if the abort loses the race.
     token += 1;
     const mine = token;
     teardown();
-    set({ state: 'loading', speakingId: id, error: null, errorId: null });
+    queuedChunks = chunks.slice(1);
+    set({ state: 'loading', speakingId: id, error: null, errorId: null, firstAudioMs: null });
 
     const ac = new AbortController();
     controller = ac;
+    const startedAt = performance.now();
 
-    try {
-      const blob = await synthesizeSpeech(trimmed, { signal: ac.signal });
-      if (mine !== token) return;
-
-      const url = URL.createObjectURL(blob);
-      objectUrl = url;
-      const el = new Audio(url);
-      audio = el;
-      await attachPlaybackReactivity(el);
-
-      el.onended = () => {
-        if (mine !== token) return;
-        teardown();
-        set({ state: 'idle', speakingId: null });
-      };
-      el.onerror = () => {
-        if (mine !== token) return;
-        teardown();
-        set({ state: 'idle', speakingId: null, error: 'Playback failed', errorId: id });
-      };
-
-      await el.play();
-      if (mine === token) set({ state: 'speaking', speakingId: id });
-    } catch (err) {
+    const fail = (err: unknown) => {
       if (mine !== token) return;
       if (err instanceof DOMException && err.name === 'AbortError') return;
       teardown();
@@ -147,6 +164,64 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
         error: err instanceof Error ? err.message : 'Speech synthesis failed',
         errorId: id,
       });
+    };
+
+    const prime = () => {
+      if (mine !== token || preparedChunk || queuedChunks.length === 0) return;
+      const nextText = queuedChunks.shift()!;
+      // Always resolve to a tagged result so an interrupted prefetch can never
+      // become an unhandled promise rejection after its audio handler is gone.
+      preparedChunk = synthesizeSpeech(nextText, { signal: ac.signal })
+        .then((blob) => ({ blob }))
+        .catch((error) => ({ error }));
+    };
+    primeQueue = prime;
+
+    const playChunk = async (blob: Blob): Promise<void> => {
+      if (mine !== token) return;
+      releaseCurrentAudio();
+      const url = URL.createObjectURL(blob);
+      objectUrl = url;
+      const el = new Audio(url);
+      audio = el;
+      await attachPlaybackReactivity(el);
+
+      // Prefetch the following phrase while this one is playing.  The queue is
+      // strictly ordered and fenced by the utterance token, so interruption
+      // cannot duplicate or leak a stale response.
+      prime();
+      el.onended = () => {
+        if (mine !== token) return;
+        const next = preparedChunk;
+        preparedChunk = null;
+        if (!next) {
+          teardown();
+          set({ state: 'idle', speakingId: null });
+          return;
+        }
+        releaseCurrentAudio();
+        void next.then((result) => {
+          if (result.error) fail(result.error);
+          else if (result.blob) void playChunk(result.blob);
+        });
+      };
+      el.onerror = () => fail(new Error('Playback failed'));
+      await el.play();
+      if (mine === token) {
+        set({
+          state: 'speaking',
+          speakingId: id,
+          firstAudioMs: get().firstAudioMs ?? Math.round(performance.now() - startedAt),
+        });
+      }
+    };
+
+    try {
+      const blob = await synthesizeSpeech(chunks[0], { signal: ac.signal });
+      if (mine !== token) return;
+      await playChunk(blob);
+    } catch (err) {
+      fail(err);
     }
   },
 
@@ -169,5 +244,6 @@ export function __resetTtsForTests(): void {
     errorId: null,
     available: null,
     autoSpokenId: null,
+    firstAudioMs: null,
   });
 }

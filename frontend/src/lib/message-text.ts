@@ -14,7 +14,7 @@ export function stripThinkTags(text: string): string {
  */
 export function toSpeakableText(text: string): string {
   let t = stripThinkTags(text);
-  t = t.replace(/```[\s\S]*?```/g, ' (code block omitted). ');
+  t = t.replace(/```[\s\S]*?(?:```|$)/g, ' (code block omitted). ');
   t = t.replace(/`([^`]*)`/g, '$1');
   t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   t = t.replace(/https?:\/\/\S+/g, '');
@@ -31,4 +31,34 @@ export function toSpeakableText(text: string): string {
   const sentences =
     lines.length > 1 ? lines.map((l) => (/[.!?:;]$/.test(l) ? l : `${l}.`)) : lines;
   return sentences.join(' ').replace(/\s{2,}/g, ' ').trim();
+}
+
+/** Split speech on natural pauses so playback can begin while later audio is synthesized. */
+export function splitSpeakableText(text: string, targetLength = 280): string[] {
+  const speakable = toSpeakableText(text);
+  if (!speakable) return [];
+  const sentences = speakable.match(/[^.!?;:]+(?:[.!?;:]+|$)/g) ?? [speakable];
+  const chunks: string[] = [];
+  let current = '';
+  const flush = () => {
+    if (current.trim()) chunks.push(current.trim());
+    current = '';
+  };
+  for (const sentence of sentences) {
+    const clean = sentence.trim();
+    if (!clean) continue;
+    if (current && current.length + clean.length + 1 > targetLength) flush();
+    if (clean.length <= targetLength) {
+      current = current ? `${current} ${clean}` : clean;
+      continue;
+    }
+    flush();
+    const words = clean.split(/\s+/);
+    for (const word of words) {
+      if (current && current.length + word.length + 1 > targetLength) flush();
+      current = current ? `${current} ${word}` : word;
+    }
+  }
+  flush();
+  return chunks;
 }

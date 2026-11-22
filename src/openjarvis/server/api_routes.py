@@ -1004,6 +1004,13 @@ async def transcribe_speech(request: Request):
 
     audio_bytes = await audio_file.read()
     language = form.get("language")
+    if not language:
+        # Respect the configured language instead of auto-detecting every
+        # short utterance.  Auto-detection on Spanish one-word commands was a
+        # frequent source of confident Russian/English hallucinations.
+        from openjarvis.core.config import load_config
+
+        language = load_config().speech.language or None
 
     # Detect format from filename
     filename = getattr(audio_file, "filename", "audio.wav")
@@ -1027,6 +1034,8 @@ async def transcribe_speech(request: Request):
         "text": result.text,
         "language": result.language,
         "confidence": result.confidence,
+        "no_speech_probability": result.no_speech_probability,
+        "average_log_probability": result.average_log_probability,
         "duration_seconds": result.duration_seconds,
     }
 

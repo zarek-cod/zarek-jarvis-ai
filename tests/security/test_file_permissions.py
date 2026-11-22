@@ -7,6 +7,13 @@ import stat
 import tempfile
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    os.name == "nt",
+    reason="POSIX mode bits 0600/0700 are not an NTFS ACL assertion",
+)
+
 
 class TestSecureMkdir:
     """secure_mkdir should create directories with 0o700."""

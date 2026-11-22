@@ -13,7 +13,7 @@ model_chat = "qwen3.5:4b"
 model_short = "qwen3.5:2b"
 fallback_model = "qwen3.5:4b"
 temperature = 0.55
-max_tokens = 4096
+max_tokens = 8192
 top_p = 0.9
 
 [agent]
@@ -29,8 +29,8 @@ port = 8000
 backend = "faster-whisper"
 model = "small"
 language = "es"
-device = "cpu"
-compute_type = "int8"
+device = "auto"
+compute_type = "float16"
 tts_backend = "kokoro"
 voice_id = "em_alex"
 voice_speed = 0.96

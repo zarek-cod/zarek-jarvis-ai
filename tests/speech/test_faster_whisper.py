@@ -141,6 +141,66 @@ def test_faster_whisper_falls_back_from_unsupported_float16():
     mock_whisper.assert_called_once_with("base", device="cpu", compute_type="int8")
 
 
+def test_faster_whisper_auto_uses_cuda_when_available():
+    mock_model = MagicMock()
+    fake_ctranslate = MagicMock(
+        get_cuda_device_count=MagicMock(return_value=1),
+        get_supported_compute_types=MagicMock(return_value={"float16", "float32"}),
+    )
+    with (
+        patch(
+            "openjarvis.speech.faster_whisper.WhisperModel",
+            return_value=mock_model,
+        ) as whisper,
+        patch("openjarvis.speech.faster_whisper.ctranslate2", fake_ctranslate),
+    ):
+        backend = FasterWhisperBackend(device="auto", compute_type="float16")
+        assert backend._ensure_model() is mock_model
+
+    whisper.assert_called_once_with("base", device="cuda", compute_type="float16")
+
+
+def test_faster_whisper_auto_falls_back_when_cuda_runtime_is_missing():
+    cuda_model = MagicMock()
+    cuda_model.transcribe.side_effect = RuntimeError(
+        "Library cublas64_12.dll is not found"
+    )
+    cpu_model = MagicMock()
+    segment = MagicMock(
+        text=" Hola",
+        start=0.0,
+        end=0.5,
+        avg_logprob=-0.1,
+        no_speech_prob=0.02,
+    )
+    info = MagicMock(language="es", language_probability=0.98, duration=0.6)
+    cpu_model.transcribe.return_value = ([segment], info)
+    fake_ctranslate = MagicMock(
+        get_cuda_device_count=MagicMock(return_value=1),
+        get_supported_compute_types=MagicMock(
+            side_effect=lambda device: (
+                {"float16"} if device == "cuda" else {"int8", "float32"}
+            )
+        ),
+    )
+    with (
+        patch(
+            "openjarvis.speech.faster_whisper.WhisperModel",
+            side_effect=[cuda_model, cpu_model],
+        ) as whisper,
+        patch("openjarvis.speech.faster_whisper.ctranslate2", fake_ctranslate),
+    ):
+        backend = FasterWhisperBackend(device="auto", compute_type="float16")
+        result = backend.transcribe(b"audio")
+
+    assert result.text == "Hola"
+    assert backend._resolved_device == "cpu"
+    assert whisper.call_args_list[-1].kwargs == {
+        "device": "cpu",
+        "compute_type": "int8",
+    }
+
+
 def test_faster_whisper_missing_dependency_hint_uses_desktop_extra():
     with patch("openjarvis.speech.faster_whisper.WhisperModel", new=None):
         backend = FasterWhisperBackend()

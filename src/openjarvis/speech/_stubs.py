@@ -24,6 +24,11 @@ class TranscriptionResult:
     text: str
     language: Optional[str] = None
     confidence: Optional[float] = None
+    # Acoustic quality is kept separate from language detection.  Whisper's
+    # ``language_probability`` alone can be high even for silence, which used
+    # to let hallucinations such as "Поехали" reach the assistant.
+    no_speech_probability: Optional[float] = None
+    average_log_probability: Optional[float] = None
     duration_seconds: float = 0.0
     segments: List[Segment] = field(default_factory=list)
 

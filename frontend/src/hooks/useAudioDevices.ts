@@ -7,6 +7,7 @@ export type MicrophonePermission = 'unknown' | 'granted' | 'denied' | 'unsupport
 
 export function useAudioDevices() {
   const settings = useAppStore((state) => state.settings);
+  const updateSettings = useAppStore((state) => state.updateSettings);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [permission, setPermission] = useState<MicrophonePermission>('unknown');
   const [level, setLevel] = useState(0);
@@ -131,6 +132,16 @@ export function useAudioDevices() {
       stopTestRef.current();
     };
   }, [enumerate]);
+
+  useEffect(() => {
+    if (
+      settings.audioInputDeviceId !== 'default'
+      && devices.length > 0
+      && !devices.some((device) => device.deviceId === settings.audioInputDeviceId)
+    ) {
+      updateSettings({ audioInputDeviceId: 'default' });
+    }
+  }, [devices, settings.audioInputDeviceId, updateSettings]);
 
   return {
     devices,

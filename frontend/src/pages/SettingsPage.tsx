@@ -38,6 +38,7 @@ import {
 } from '../lib/api';
 import { isAutoUpdateDisabled, setAutoUpdateDisabled } from '../components/Desktop/UpdateChecker';
 import { AudioSettingsPanel } from '../components/settings/AudioSettingsPanel';
+import { PermissionsSettingsPanel } from '../components/settings/PermissionsSettingsPanel';
 
 const CLOUD_KEY_STATUS_CHANGED = 'openjarvis-cloud-key-status-changed';
 
@@ -519,6 +520,18 @@ export function SettingsPage() {
                 <option value="large">Grande</option>
               </select>
             </SettingRow>
+            <SettingRow label="Calidad gráfica" description="Ajusta galaxias, partículas y frecuencia del núcleo sin afectar la IA">
+              <select
+                value={settings.graphicsQuality}
+                onChange={(e) => { updateSettings({ graphicsQuality: e.target.value as 'low' | 'balanced' | 'ultra' }); showSaved(); }}
+                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+                style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+              >
+                <option value="low">Eficiente</option>
+                <option value="balanced">Equilibrada</option>
+                <option value="ultra">Ultra</option>
+              </select>
+            </SettingRow>
             <SettingRow
               label="Zona horaria"
               description={`Las respuestas usan esta zona. Actual: ${resolveTimeZone(settings.timeZone)} (${utcOffsetLabel(resolveTimeZone(settings.timeZone))})`}
@@ -807,6 +820,7 @@ export function SettingsPage() {
           </Section>
 
           <AudioSettingsPanel />
+          <PermissionsSettingsPanel />
 
           {/* Speech output */}
           <Section title="Salida de voz">

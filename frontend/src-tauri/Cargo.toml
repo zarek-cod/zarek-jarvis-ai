@@ -1,6 +1,6 @@
 [package]
 name = "zarek-jarvis-desktop"
-version = "1.1.0"
+version = "1.2.0"
 description = "ZAREK JARVIS AI — local-first personal desktop intelligence"
 edition = "2021"
 license = "MIT"

@@ -109,26 +109,44 @@ function CopyMessageButton({ content }: { content: string }) {
   );
 }
 
+/** Shared safe renderer used by chat and the immersive voice transcript. */
+export function AssistantMarkdown({
+  content,
+  sources = [],
+}: {
+  content: string;
+  sources?: NonNullable<ChatMessage['researchSources']>;
+}) {
+  const cleanContent = useMemo(() => stripThinkTags(content), [content]);
+  const sourcesMap = useMemo(() => {
+    const map = new Map<number, NonNullable<ChatMessage['researchSources']>[number]>();
+    for (const source of sources) {
+      if (typeof source.ref === 'number') map.set(source.ref, source);
+    }
+    return map;
+  }, [sources]);
+  const rehypePlugins = useMemo(() => {
+    const plugins: any[] = [[rehypeHighlight, { detect: true }], rehypeKatex];
+    if (sourcesMap.size > 0) plugins.push([rehypeCitations, { sources: sourcesMap }]);
+    return plugins;
+  }, [sourcesMap]);
+
+  if (!cleanContent) return null;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={rehypePlugins}
+      components={{ ...autoDirComponents, pre: CodeBlockPre }}
+    >
+      {cleanContent}
+    </ReactMarkdown>
+  );
+}
+
 export function MessageBubble({ message, isLive = false }: Props) {
   const isUser = message.role === 'user';
 
   const cleanContent = useMemo(() => stripThinkTags(message.content), [message.content]);
-
-  // Build a ref→source lookup once per render. Memoized so the rehype plugin
-  // identity stays stable until the source list actually changes.
-  const sourcesMap = useMemo(() => {
-    const m = new Map<number, NonNullable<ChatMessage['researchSources']>[number]>();
-    for (const s of message.researchSources ?? []) {
-      if (typeof s.ref === 'number') m.set(s.ref, s);
-    }
-    return m;
-  }, [message.researchSources]);
-
-  const rehypePlugins = useMemo(() => {
-    const base: any[] = [[rehypeHighlight, { detect: true }], rehypeKatex];
-    if (sourcesMap.size > 0) base.push([rehypeCitations, { sources: sourcesMap }]);
-    return base;
-  }, [sourcesMap]);
 
   if (isUser) {
     return (
@@ -176,16 +194,7 @@ export function MessageBubble({ message, isLive = false }: Props) {
       {/* Assistant message */}
       {cleanContent && (
         <div className="prose max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={rehypePlugins}
-            components={{
-              ...autoDirComponents,
-              pre: CodeBlockPre,
-            }}
-          >
-            {cleanContent}
-          </ReactMarkdown>
+          <AssistantMarkdown content={cleanContent} sources={message.researchSources} />
         </div>
       )}
 

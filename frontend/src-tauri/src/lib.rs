@@ -2149,6 +2149,7 @@ async fn transcribe_audio(
     api_url: String,
     audio_data: Vec<u8>,
     filename: String,
+    language: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let url = format!("{}/v1/speech/transcribe", api_url);
     let client = reqwest::Client::new();
@@ -2158,7 +2159,10 @@ async fn transcribe_audio(
         .mime_str("audio/webm")
         .map_err(|e| format!("Failed to create multipart: {}", e))?;
 
-    let form = reqwest::multipart::Form::new().part("file", part);
+    let mut form = reqwest::multipart::Form::new().part("file", part);
+    if let Some(language) = language.filter(|value| !value.trim().is_empty()) {
+        form = form.text("language", language);
+    }
 
     let resp = client
         .post(&url)
@@ -2979,6 +2983,74 @@ fn set_engine_host_in_config(engine: &str, host: &str) -> Result<(), String> {
     std::fs::write(&path, updated).map_err(|e| format!("Failed to write config.toml: {}", e))
 }
 
+fn openjarvis_config_path() -> std::path::PathBuf {
+    std::path::PathBuf::from(home_dir())
+        .join(".openjarvis")
+        .join("config.toml")
+}
+
+#[tauri::command]
+fn get_authorized_dirs() -> Result<Vec<String>, String> {
+    let text = std::fs::read_to_string(openjarvis_config_path()).unwrap_or_default();
+    if text.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let doc = text
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|e| format!("Invalid config.toml: {}", e))?;
+    Ok(doc["security"]["allowed_dirs"]
+        .as_array()
+        .map(|array| {
+            array
+                .iter()
+                .filter_map(|value| value.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default())
+}
+
+#[tauri::command]
+fn set_authorized_dirs(dirs: Vec<String>) -> Result<Vec<String>, String> {
+    if dirs.len() > 16 {
+        return Err("A maximum of 16 authorized folders is supported.".into());
+    }
+    let mut validated = Vec::new();
+    for raw in dirs {
+        let path = std::path::PathBuf::from(raw.trim());
+        if !path.is_absolute() || !path.is_dir() {
+            return Err(format!("Authorized path is not an existing absolute folder: {}", path.display()));
+        }
+        let canonical = path
+            .canonicalize()
+            .map_err(|e| format!("Could not resolve {}: {}", path.display(), e))?;
+        let value = canonical.to_string_lossy().to_string();
+        if !validated.contains(&value) {
+            validated.push(value);
+        }
+    }
+
+    let path = openjarvis_config_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Could not create config directory: {}", e))?;
+    }
+    let existing = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut doc = existing
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|e| format!("Invalid config.toml: {}", e))?;
+    let mut array = toml_edit::Array::new();
+    for directory in &validated {
+        array.push(directory.as_str());
+    }
+    doc["security"]["allowed_dirs"] = toml_edit::Item::Value(toml_edit::Value::Array(array));
+    // Destructive and high-impact operations remain confirmation-gated even
+    // when ordinary file writes are authorized inside these roots.
+    doc["security"]["enforce_tool_confirmation"] = toml_edit::value(true);
+    std::fs::write(&path, doc.to_string())
+        .map_err(|e| format!("Failed to write config.toml: {}", e))?;
+    Ok(validated)
+}
+
 /// Normalize a user-entered server URL to a bare base host: trim whitespace,
 /// drop a trailing `/v1` segment (the engine re-appends its own api prefix),
 /// then drop any trailing slash.
@@ -3556,6 +3628,8 @@ pub fn run() {
             delete_ollama_model,
             save_cloud_key,
             get_cloud_key_status,
+            get_authorized_dirs,
+            set_authorized_dirs,
             get_inference_source,
             set_inference_source,
             toggle_overlay,

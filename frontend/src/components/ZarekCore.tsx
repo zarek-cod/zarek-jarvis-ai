@@ -51,7 +51,10 @@ export function ZarekCore({ compact = false }: { compact?: boolean }) {
   const treble = useAudioReactor((state) => state.treble);
   const bands = { level, bass, mid, treble };
   const streamState = useAppStore((state) => state.streamState);
-  const particles = useMemo(() => createParticles(compact ? 34 : 72), [compact]);
+  const graphicsQuality = useAppStore((state) => state.settings.graphicsQuality);
+  const particles = useMemo(() => createParticles(
+    compact ? 30 : graphicsQuality === 'low' ? 38 : graphicsQuality === 'ultra' ? 96 : 68,
+  ), [compact, graphicsQuality]);
 
   let mode: ReactorMode = sourceMode;
   if (sourceMode === 'standby' && streamState.isStreaming) {
@@ -74,7 +77,7 @@ export function ZarekCore({ compact = false }: { compact?: boolean }) {
 
     const draw = (now: number) => {
       frame = requestAnimationFrame(draw);
-      const minimumFrame = document.hidden ? 120 : reducedMotion ? 48 : 15;
+      const minimumFrame = document.hidden ? 120 : reducedMotion ? 48 : graphicsQuality === 'low' ? 32 : 15;
       if (now - lastDraw < minimumFrame) return;
       lastDraw = now;
       const bounds = canvas.getBoundingClientRect();
@@ -208,7 +211,7 @@ export function ZarekCore({ compact = false }: { compact?: boolean }) {
 
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
-  }, [particles]);
+  }, [particles, graphicsQuality]);
 
   return (
     <section className={`zarek-core ${compact ? 'zarek-core--compact' : ''}`} aria-label={`JARVIS: ${STATE_LABEL[mode]}`}>

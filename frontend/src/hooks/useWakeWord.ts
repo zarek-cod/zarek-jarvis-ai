@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { transcribeAudio } from '../lib/api';
 import {
   applyMicrophoneGain,
-  buildAudioConstraints,
+  assessTranscription,
   extractWakeCommand,
   playWakeChime,
+  openMicrophone,
   rmsLevel,
 } from '../lib/audio-input';
 import { useAudioReactor } from '../lib/audio-reactor';
@@ -56,10 +57,20 @@ export function useWakeWord(onCommand: (command: string) => void) {
       setStatus('transcribing');
       setMessage('Interpretando audio local…');
       try {
-        const result = await transcribeAudio(blob);
+        const result = await transcribeAudio(blob, 'wake.webm', settings.speechLanguage);
         if (cancelled) return;
+        const assessment = assessTranscription(
+          result,
+          settings.speechLanguage,
+          settings.transcriptionConfidence,
+        );
+        if (!assessment.accepted) {
+          setStatus('ready');
+          setMessage('Audio descartado · esperando una voz clara');
+          return;
+        }
         const wasArmed = performance.now() < armedUntil;
-        const wake = extractWakeCommand(result.text, settings.wakeWord, wasArmed);
+        const wake = extractWakeCommand(assessment.text, settings.wakeWord, wasArmed);
         if (!wake.detected) {
           setStatus('ready');
           setMessage(`Esperando “${settings.wakeWord || 'Jarvis'}”`);
@@ -94,9 +105,11 @@ export function useWakeWord(onCommand: (command: string) => void) {
 
     const start = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: buildAudioConstraints(settings),
-        });
+        const opened = await openMicrophone(settings);
+        stream = opened.stream;
+        if (opened.fellBackToDefault) {
+          useAppStore.getState().updateSettings({ audioInputDeviceId: 'default' });
+        }
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
           return;
@@ -118,6 +131,8 @@ export function useWakeWord(onCommand: (command: string) => void) {
         source.connect(analyser);
         if (context.state === 'suspended') await context.resume();
         const samples = new Uint8Array(analyser.fftSize);
+        let noiseFloor = 0.015;
+        let calibrationSamples = 0;
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : undefined;
@@ -180,20 +195,25 @@ export function useWakeWord(onCommand: (command: string) => void) {
           }
           analyser.getByteTimeDomainData(samples);
           const level = rmsLevel(samples);
+          if (!capturing && !processing && calibrationSamples < 40) {
+            noiseFloor = (noiseFloor * calibrationSamples + level) / (calibrationSamples + 1);
+            calibrationSamples += 1;
+          }
+          const adaptiveThreshold = Math.max(settings.microphoneSensitivity, noiseFloor * 2.25);
           useAudioReactor.getState().setBands({
             level,
             bass: level * 0.86,
             mid: level,
             treble: level * 0.7,
           });
-          if (level >= settings.microphoneSensitivity) {
+          if (level >= adaptiveThreshold) {
             lastSpeechAt = now;
             if (!capturing && !processing) {
               beginCapture(now);
             }
           }
           if (capturing && (
-            (now - lastSpeechAt >= settings.silenceTimeoutMs && now - speechStartedAt > 300)
+            (now - lastSpeechAt >= settings.silenceTimeoutMs && now - speechStartedAt > 360)
             || now - speechStartedAt >= 12_000
           )) {
             finishCapture();
