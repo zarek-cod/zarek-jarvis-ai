@@ -13,16 +13,16 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
 
   const tooltipText =
     reason === 'not-enabled'
-      ? 'Enable in Settings'
+      ? 'Actívalo en Ajustes > Audio'
       : reason === 'no-backend'
-        ? 'Speech backend not configured'
+        ? 'Motor de voz local no disponible'
         : reason === 'streaming'
-          ? 'Wait for response'
+          ? 'Espera a la respuesta'
           : state === 'recording'
-            ? 'Stop recording'
+            ? 'Detener grabación'
             : state === 'transcribing'
-              ? 'Transcribing...'
-              : 'Voice input';
+              ? 'Transcribiendo…'
+              : 'Hablar con JARVIS';
 
   const isInactive = disabled || state === 'transcribing';
 
@@ -35,7 +35,7 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
       <button
         onClick={onClick}
         disabled={isInactive}
-        className="p-2 rounded-xl transition-all shrink-0"
+        className="zarek-mic-button p-2 rounded-xl transition-all shrink-0"
         style={{
           background: state === 'recording'
             ? 'var(--color-error)'

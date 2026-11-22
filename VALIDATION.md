@@ -2,6 +2,41 @@
 
 Fecha: 2026-11-21 (America/Lima).
 
+## Versión 1.1.0 — validación final
+
+| Prueba | Resultado observado |
+|---|---|
+| Frontend Vitest | 131/131 correctas |
+| TypeScript + Vite | Build de producción correcto |
+| Rust/Tauri | 51/51 correctas |
+| Backend voz, configuración y rutas críticas | 280 correctas, 1 omitida |
+| NSIS x64 y MSI x64 | Generados correctamente |
+| Instalación silenciosa y apertura | Correctas |
+| Backend instalado `/health` | `{"status":"ok"}` |
+| Consola visible al iniciar | Ninguna (`WindowsTerminal`: 0 ventanas) |
+| Bandeja, acceso de Escritorio y menú Inicio | Presentes |
+| Micrófonos de Windows | 4 dispositivos reales enumerados más el predeterminado |
+| Palabra “Jarvis” | Aprobada de extremo a extremo |
+| Atajo `Ctrl + Shift + Espacio` | Aprobado: abrió el chat y activó escucha |
+| TTS local | Kokoro disponible, `em_alex`, velocidad 0.96 |
+| Modo Voz instalado | Aprobado: ruta `/voice`, núcleo grande y sin caja de mensaje |
+| Respuesta hablada automática | Aprobada: estados `Preparando voz local…` y `JARVIS está hablando`, control **Detener** visible |
+| Interrupción | Aprobada: el micrófono detuvo la reproducción y devolvió el estado a `Esperando “Jarvis”` |
+| Actualización de frontend Tauri | Aprobada: caché heredado eliminado y conversaciones/preferencias conservadas |
+
+La prueba de activación reprodujo una muestra real por los altavoces: “Jarvis, dime cuál es tu nombre”. La aplicación la capturó con `Microphone Array (Realtek(R) Audio)`, creó la conversación `dime cual es tu nombre`, ejecutó `qwen3.5:4b` y respondió: “A su servicio, señor Zarek… Mi nombre es ZAREK JARVIS AI.” No se da por aprobada solo por pruebas unitarias: se observó el flujo dentro de la instalación NSIS.
+
+En la prueba final del nuevo apartado, **Modo Voz** recibió una orden sin teclado, mostró la respuesta generada, sintetizó con Kokoro y alcanzó el estado visible **JARVIS está hablando** con botón **Detener**. La escucha continua permaneció suspendida durante la salida para no capturar el altavoz; al interrumpir, volvió a **Esperando “Jarvis”**.
+
+Dispositivos enumerados durante la prueba:
+
+- Comunicaciones — Microphone (4- Usb Audio Device).
+- Microphone Array (Realtek(R) Audio).
+- Microphone (4- Usb Audio Device).
+- VoiceWave Microphone (EaseUS Virtual Device).
+
+Artefacto final: `ZAREK JARVIS AI_1.1.0_x64-setup.exe`, 8,196,365 bytes, SHA-256 `006157F5EFAD4E226DE2CE4777AB22B3C287FF0103CE2525B67DB58D66B669B3`. No está firmado con Authenticode.
+
 ## Línea base antes de personalizar
 
 | Prueba | Resultado |
@@ -39,7 +74,7 @@ El único fallo fue `tests/core/test_credentials.py::test_file_permissions`: com
 - Conversación completa desde la UI: 10.4 s para 22 tokens de salida, incluido arranque de contexto.
 - Memoria GPU del modelo: aproximadamente 3.7 GB; ejecución íntegra en la RTX 5060 Laptop.
 - Kokoro: muestra de 5.65 s, WAV de 24 kHz y 271,244 bytes.
-- Instalador SHA-256: `61D7AE6E50E15F3CCB7C97567F1143132C9B07A6CCA7BF5C835B948728137A09`.
+- Instalador final SHA-256: `006157F5EFAD4E226DE2CE4777AB22B3C287FF0103CE2525B67DB58D66B669B3`.
 - Firma Authenticode: no firmada; no se dispone de certificado comercial en esta publicación comunitaria.
 
 No se considera aprobado ningún escenario que no se haya observado o medido.

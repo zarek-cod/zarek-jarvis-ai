@@ -128,6 +128,34 @@ export function ZarekCore({ compact = false }: { compact?: boolean }) {
         }
       }
 
+      // Electric arcs bridge the outer reactor rings. They are deterministic,
+      // voice-reactive and deliberately irregular so the core feels alive.
+      if (!reducedMotion) {
+        const arcCount = 3 + Math.round(energy * 4);
+        context.lineCap = 'round';
+        for (let arc = 0; arc < arcCount; arc += 1) {
+          const angle = time * (0.3 + arc * 0.025) + arc * 2.17;
+          const inner = unit * (0.28 + (arc % 2) * 0.1);
+          const outer = unit * (0.63 + live.treble * 0.12);
+          context.beginPath();
+          for (let point = 0; point <= 8; point += 1) {
+            const ratio = point / 8;
+            const jitter = Math.sin(time * 9 + arc * 17 + point * 4.7) * unit * 0.022;
+            const radius = inner + (outer - inner) * ratio + jitter;
+            const pointAngle = angle + ratio * (0.24 + live.mid * 0.3) + Math.sin(point * 5.2) * 0.025;
+            const x = cx + Math.cos(pointAngle) * radius;
+            const y = cy + Math.sin(pointAngle) * radius;
+            if (point === 0) context.moveTo(x, y);
+            else context.lineTo(x, y);
+          }
+          context.strokeStyle = `rgba(${hue}, ${0.18 + energy * 0.42})`;
+          context.lineWidth = 0.65 + live.level * 1.4;
+          context.shadowColor = `rgba(${hue}, 1)`;
+          context.shadowBlur = 10 + live.level * 18;
+          context.stroke();
+        }
+      }
+
       context.shadowBlur = 8 + live.level * 16;
       for (const particle of particles) {
         const angle = particle.angle + time * particle.speed * (1 + energy * 2.4);
@@ -151,6 +179,30 @@ export function ZarekCore({ compact = false }: { compact?: boolean }) {
       context.beginPath();
       context.arc(cx, cy, coreRadius, 0, Math.PI * 2);
       context.fill();
+
+      // Dark holographic crystal facets wrap the luminous center.
+      context.save();
+      context.translate(cx, cy);
+      context.rotate(time * -0.08);
+      for (let facet = 0; facet < 10; facet += 1) {
+        const angle = (facet / 10) * Math.PI * 2;
+        const next = angle + Math.PI / 5;
+        const inner = coreRadius * 0.72;
+        const outer = coreRadius * (1.48 + Math.sin(time * 1.3 + facet) * 0.08);
+        context.beginPath();
+        context.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+        context.lineTo(Math.cos(angle + Math.PI / 10) * outer, Math.sin(angle + Math.PI / 10) * outer);
+        context.lineTo(Math.cos(next) * inner, Math.sin(next) * inner);
+        context.closePath();
+        context.fillStyle = facet % 2
+          ? `rgba(0, 28, 61, ${0.28 + energy * 0.12})`
+          : `rgba(${hue}, ${0.08 + energy * 0.12})`;
+        context.strokeStyle = `rgba(${hue}, ${0.22 + energy * 0.28})`;
+        context.lineWidth = 0.7;
+        context.fill();
+        context.stroke();
+      }
+      context.restore();
       context.restore();
     };
 

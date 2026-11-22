@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Square, Paperclip, Search } from 'lucide-react';
+import { Mic, Radio, Send, Square, Search, Waves } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
@@ -79,8 +79,9 @@ function useResearchCorpusSync(enabled: boolean): {
   return state;
 }
 
-export function InputArea() {
+export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) {
   const [input, setInput] = useState('');
+  const [lastVoiceTranscript, setLastVoiceTranscript] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -89,6 +90,8 @@ export function InputArea() {
   const selectedModel = useAppStore((s) => s.selectedModel);
   const streamState = useAppStore((s) => s.streamState);
   const messages = useAppStore((s) => s.messages);
+  const pendingVoiceCommand = useAppStore((s) => s.pendingVoiceCommand);
+  const setPendingVoiceCommand = useAppStore((s) => s.setPendingVoiceCommand);
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
   const maxTokens = useAppStore((s) => s.settings.maxTokens);
   const temperature = useAppStore((s) => s.settings.temperature);
@@ -109,7 +112,16 @@ export function InputArea() {
     available: speechAvailable,
     startRecording,
     stopRecording,
-  } = useSpeech();
+  } = useSpeech({
+    onTranscript: (text) => {
+      if (variant === 'voice') {
+        setLastVoiceTranscript(text);
+        setPendingVoiceCommand(text);
+      } else {
+        setInput((previous) => previous ? `${previous} ${text}` : text);
+      }
+    },
+  });
 
   // Abort in-flight stream when the user switches models mid-generation.
   // This prevents errors from trying to continue a stream with a stale model.
@@ -127,11 +139,10 @@ export function InputArea() {
     prevModelRef.current = selectedModel;
   }, [selectedModel, streamState.isStreaming, resetStream]);
 
-  const micDisabled = !speechEnabled || !speechAvailable || streamState.isStreaming;
+  const micDisabled = !speechEnabled || !speechAvailable;
   const micReason: 'not-enabled' | 'no-backend' | 'streaming' | undefined =
     !speechEnabled ? 'not-enabled'
     : !speechAvailable ? 'no-backend'
-    : streamState.isStreaming ? 'streaming'
     : undefined;
 
   useEffect(() => {
@@ -143,10 +154,7 @@ export function InputArea() {
   const handleMicClick = useCallback(async () => {
     if (speechState === 'recording') {
       try {
-        const text = await stopRecording();
-        if (text) {
-          setInput((prev) => (prev ? prev + ' ' + text : text));
-        }
+        await stopRecording();
       } catch {
         // Error is captured in useSpeech
       }
@@ -171,8 +179,8 @@ export function InputArea() {
     resetStream();
   }, [resetStream]);
 
-  const sendMessage = useCallback(async () => {
-    const content = input.trim();
+  const sendMessage = useCallback(async (override?: string) => {
+    const content = (typeof override === 'string' ? override : input).trim();
     if (!content || streamState.isStreaming) return;
     if (!selectedModel) {
       toast.error('Seleccione un modelo primero (Ctrl+K)');
@@ -554,12 +562,68 @@ export function InputArea() {
     maxTokens,
   ]);
 
+  useEffect(() => {
+    if (!pendingVoiceCommand || streamState.isStreaming) return;
+    const command = pendingVoiceCommand;
+    setPendingVoiceCommand(null);
+    void sendMessage(command);
+  }, [pendingVoiceCommand, sendMessage, setPendingVoiceCommand, streamState.isStreaming]);
+
+  useEffect(() => {
+    const toggleMicrophone = () => void handleMicClick();
+    window.addEventListener('zarek:toggle-microphone', toggleMicrophone);
+    return () => window.removeEventListener('zarek:toggle-microphone', toggleMicrophone);
+  }, [handleMicClick]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
+
+  if (variant === 'voice') {
+    const voiceStatus = speechState === 'recording'
+      ? 'Te escucho, señor Zarek'
+      : speechState === 'transcribing'
+        ? 'Interpretando tu voz…'
+        : isCurrentChatStreaming
+          ? 'JARVIS está preparando la respuesta…'
+          : 'Pulsa el núcleo y habla con naturalidad';
+
+    return (
+      <section className="voice-capture" aria-label="Controles del modo voz">
+        <div className={`voice-capture__status is-${speechState}`} role="status" aria-live="polite">
+          <Waves size={18} aria-hidden="true" />
+          <span>{voiceStatus}</span>
+        </div>
+        {lastVoiceTranscript && (
+          <p className="voice-capture__transcript">“{lastVoiceTranscript}”</p>
+        )}
+        <button
+          type="button"
+          className={`voice-capture__button is-${speechState}`}
+          onClick={() => void handleMicClick()}
+          disabled={micDisabled || isCurrentChatStreaming || modelLoading}
+          aria-label={speechState === 'recording' ? 'Detener escucha' : 'Empezar a hablar'}
+        >
+          <span className="voice-capture__button-ring" aria-hidden="true" />
+          {speechState === 'recording' ? <Square size={30} /> : <Mic size={34} />}
+        </button>
+        <div className="voice-capture__hint">
+          <Radio size={14} aria-hidden="true" />
+          <span>Di “Jarvis” para activar · pulsa el micrófono o Ctrl + Shift + Espacio para interrumpir</span>
+        </div>
+        {micDisabled && (
+          <p className="voice-capture__error">
+            {micReason === 'not-enabled'
+              ? 'Activando la entrada local…'
+              : 'El motor de reconocimiento todavía no está disponible.'}
+          </p>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className="px-4 pb-4 pt-2" style={{ maxWidth: 'var(--chat-max-width)', margin: '0 auto', width: '100%' }}>
@@ -632,7 +696,7 @@ export function InputArea() {
               reason={micReason}
             />
             <button
-              onClick={sendMessage}
+              onClick={() => void sendMessage()}
               disabled={streamState.isStreaming || !input.trim() || modelLoading || !selectedModel}
               title={selectedModel ? 'Enviar mensaje' : 'Seleccione un modelo primero (Ctrl+K)'}
               className="p-2 rounded-xl transition-colors shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-default"

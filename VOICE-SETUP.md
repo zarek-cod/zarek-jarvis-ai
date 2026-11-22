@@ -1,5 +1,24 @@
 # Configuración de voz
 
+## Entrada de Windows y activación “Jarvis”
+
+La matriz de audio enumera entradas físicas y virtuales mediante `mediaDevices.enumerateDevices`, conserva el `deviceId` seleccionado y vuelve a abrir exactamente ese dispositivo. Vigila `devicechange` y desconexiones de pista, muestra RMS en vivo y respeta las capacidades que el controlador expone.
+
+Flujos disponibles:
+
+- **Modo Voz**: pantalla independiente sin teclado, con núcleo grande, transcripción visible y lectura automática de cada respuesta.
+- Botón de micrófono: inicia dictado local; vuelve a pulsarlo para terminar.
+- `Ctrl + Shift + Espacio`: atajo global de Windows; trae ZAREK al frente y alterna el micrófono.
+- “Jarvis, <orden>”: detecta palabra y orden en la misma frase.
+- “Jarvis” y, tras el tono, `<orden>`: mantiene una ventana de ocho segundos.
+- Interrumpir una respuesta: pulse el micrófono grande, **Detener** o `Ctrl + Shift + Espacio`; la reproducción se corta antes de abrir el micrófono.
+
+La palabra de activación es configurable y admite una variación de reconocimiento de un carácter (por ejemplo, `Yarvis`) sin aceptar frases arbitrarias. Cada segmento se graba en un WebM independiente para evitar marcas de tiempo acumuladas y latencia creciente. La transcripción y la detección se ejecutan en el equipo.
+
+La escucha continua requiere consentimiento explícito y se guarda como una preferencia local; viene desactivada por defecto. Se recomienda mantener **Cancelación de eco** activa para impedir que los altavoces reactiven al asistente.
+
+Mientras Kokoro reproduce una respuesta, la detección continua se pausa para que JARVIS no se transcriba ni se interrumpa a sí mismo. El botón grande y el atajo global siguen disponibles como interrupción intencional.
+
 ## Predeterminado local
 
 - STT: Faster-Whisper `small`, idioma `es`, CPU `int8`.

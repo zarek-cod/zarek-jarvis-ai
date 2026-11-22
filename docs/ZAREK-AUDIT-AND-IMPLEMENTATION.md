@@ -44,6 +44,8 @@ El Python global 3.14 no se usa para ZAREK; el entorno está fijado a Python 3.1
 - Núcleo animado Canvas 2D con estados de espera, escucha, procesamiento, habla y ejecución.
 - Reacción de graves, medios y agudos mediante `AudioContext`, `AnalyserNode` y FFT reales para micrófono y reproducción.
 - Interfaz principal y flujo inicial traducidos al español.
+- Modo Voz independiente, sin entrada de texto, con núcleo ampliado, diálogo legible, TTS automático y control de interrupción.
+- Segoe UI Variable y contrastes secundarios reforzados; el ajuste de tamaño de fuente ahora se aplica al documento completo.
 - Selector “instalados” filtrado para no presentar el catálogo NIM remoto como modelos locales.
 
 El emblema original fue generado con ImageGen y fondo transparente. Prompt resumido: “emblema geométrico original con núcleo circular, tres anillos segmentados y una Z angular en espacio negativo; azul eléctrico, cian y azure; legible a 32 px; sin texto, marcas, escudo, rostro ni semejanza a insignias ficticias existentes”. El activo final está en `frontend/public/zarek-emblem.png` y la fuente de iconos en `frontend/src-tauri/icons/zarek-emblem-source.png`.
@@ -71,6 +73,8 @@ El emblema original fue generado con ImageGen y fondo transparente. Prompt resum
 - Compilación limitada a un trabajo Cargo para evitar bloqueos `EBUSY`/`aws-lc` observados con compilación concurrente en este equipo.
 - El updater de OpenJarvis quedó desactivado para impedir que una actualización upstream reemplace la personalización.
 - La instalación empaquetada clona en el primer arranque este repositorio ZAREK, no el repositorio upstream.
+- El build Tauri no registra la PWA: el modo escritorio ya funciona sin conexión y un service worker podía conservar assets antiguos tras actualizar.
+- El hook NSIS elimina exclusivamente `EBWebView\Default\Service Worker`; conserva almacenamiento local, conversaciones y preferencias.
 
 ### Privacidad y seguridad
 
@@ -98,10 +102,10 @@ El emblema original fue generado con ImageGen y fondo transparente. Prompt resum
 
 | Validación | Resultado |
 |---|---|
-| Vitest frontend | 126 aprobadas de 126 |
+| Vitest frontend | 131 aprobadas de 131 |
 | TypeScript + Vite | Build correcto |
-| Rust/Tauri | 50 aprobadas de 50 |
-| Backend core/voz/rutas | 476 aprobadas, 3 omitidas, 1 aserción POSIX incompatible con Windows |
+| Rust/Tauri | 51 aprobadas de 51 |
+| Backend voz, configuración y rutas críticas | 280 aprobadas, 1 omitida |
 | API `/health` | `status=ok` |
 | TTS health | Kokoro disponible, `em_alex`, 0.96 |
 | Identidad en UI | “Mi nombre exacto es ZAREK JARVIS AI y debo llamarte señor Zarek.” |
@@ -136,3 +140,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\zarek\build.ps1
 Repositorio público: `https://github.com/zarek-cod/zarek-jarvis-ai`, rama predeterminada `main`, tag inicial `v1.0.1-zarek`. El instalador NSIS x64 tiene 8,186,047 bytes y SHA-256 `61D7AE6E50E15F3CCB7C97567F1143132C9B07A6CCA7BF5C835B948728137A09`; Windows Defender no detectó amenazas. No tiene firma Authenticode porque esta publicación comunitaria no dispone de certificado comercial.
 
 Antes de publicar se ejecutaron `git diff --check`, Gitleaks sobre los cambios preparados, búsqueda adicional de patrones de secretos, tests de frontend/backend/Rust y build. El remoto `upstream` se conserva para recibir cambios de OpenJarvis mediante una fusión revisada, nunca mediante reemplazo automático.
+
+## 9. Continuación v1.1.0 — audio, activación y acabado premium
+
+Esta iteración continuó sobre la base existente; no reemplazó la arquitectura. Se conservaron chat, agentes, memoria, Tauri, backend FastAPI, Ollama, Kokoro, bandeja y configuración, y se añadieron:
+
+- `AmbientStage`, rayos deterministas, partículas, auroras y facetas de cristal; el núcleo mantiene reactividad real de micrófono/TTS.
+- `AudioSettingsPanel`, `useAudioDevices` y `audio-input`: selección persistente por `deviceId`, medidor RMS, prueba, capacidades, `devicechange`, permisos y desconexión.
+- `useWakeWord` y `VoiceRuntime`: activación local, consentimiento, tono, orden en una o dos frases, tolerancia limitada y puente global hacia el chat.
+- Segmentación VAD en grabaciones WebM autocontenidas. La primera implementación reutilizaba un encabezado antiguo y generaba líneas de tiempo crecientes; la prueba instalada permitió detectarlo y corregirlo antes de publicar.
+- Atajo Rust global funcional, arranque de procesos con `CREATE_NO_WINDOW`, refresco administrado solo para un checkout limpio y conocido, y versión NSIS/MSI 1.1.0.
+- `VoiceModePage` y la ruta `/voice`: experiencia sólo hablada, TTS automático, botón de interrupción y retorno al chat.
+- Protección contra autoeco: `useWakeWord` pausa la detección mientras TTS está cargando o reproduciendo; el micrófono manual y el atajo siguen deteniendo la voz de forma intencional.
+- Tipografía y contraste revisados, con tamaños configurables aplicados realmente desde el estado global.
+
+La evidencia final fue obtenida en `C:\Users\joels\AppData\Local\ZAREK JARVIS AI\zarek-jarvis-desktop.exe`: salud del backend correcta, cero consolas visibles, cuatro entradas reales enumeradas, Kokoro disponible y activación “Jarvis” confirmada de micrófono a respuesta del LLM. También se observó el Modo Voz instalado sin caja de mensaje, la transición a **JARVIS está hablando**, el botón **Detener** y el retorno a espera tras interrumpir. El detalle reproducible, hash del instalador y conteos está en `VALIDATION.md`.

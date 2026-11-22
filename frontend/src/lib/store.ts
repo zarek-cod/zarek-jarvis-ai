@@ -93,7 +93,7 @@ function saveConversations(store: ConversationStore): void {
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-interface Settings {
+export interface Settings {
   theme: ThemeMode;
   apiUrl: string;
   // Local server API key (OPENJARVIS_API_KEY). Sent as a Bearer token on
@@ -108,6 +108,18 @@ interface Settings {
   speechEnabled: boolean;
   voiceOutputEnabled: boolean;
   voiceAutoplay: boolean;
+  audioInputDeviceId: string;
+  microphoneSensitivity: number;
+  microphoneGain: number;
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
+  autoGainControl: boolean;
+  voiceActivationEnabled: boolean;
+  silenceTimeoutMs: number;
+  wakeWordEnabled: boolean;
+  wakeWord: string;
+  wakeSoundEnabled: boolean;
+  continuousListeningEnabled: boolean;
   // IANA time zone for dates in answers; '' = this device's zone.
   timeZone: string;
 }
@@ -123,8 +135,20 @@ function loadSettings(): Settings {
     temperature: 0.7,
     maxTokens: 4096,
     speechEnabled: false,
-    voiceOutputEnabled: false,
-    voiceAutoplay: false,
+    voiceOutputEnabled: true,
+    voiceAutoplay: true,
+    audioInputDeviceId: 'default',
+    microphoneSensitivity: 0.12,
+    microphoneGain: 1,
+    noiseSuppression: true,
+    echoCancellation: true,
+    autoGainControl: true,
+    voiceActivationEnabled: true,
+    silenceTimeoutMs: 1100,
+    wakeWordEnabled: false,
+    wakeWord: 'Jarvis',
+    wakeSoundEnabled: true,
+    continuousListeningEnabled: false,
     timeZone: '',
   };
   try {
@@ -157,6 +181,7 @@ interface AppState {
   activeId: string | null;
   messages: ChatMessage[];
   streamState: StreamState;
+  pendingVoiceCommand: string | null;
 
   // Models & server
   models: ModelInfo[];
@@ -205,6 +230,7 @@ interface AppState {
   ) => void;
   setStreamState: (state: Partial<StreamState>) => void;
   resetStream: () => void;
+  setPendingVoiceCommand: (command: string | null) => void;
 
   // Deep Research toggle
   deepResearch: boolean;
@@ -282,6 +308,7 @@ export const useAppStore = create<AppState>((set, get) => {
         ? initial.conversations[initial.activeId].messages
         : [],
     streamState: INITIAL_STREAM,
+    pendingVoiceCommand: null,
 
     models: [],
     modelsLoading: true,
@@ -471,6 +498,7 @@ export const useAppStore = create<AppState>((set, get) => {
     resetStream: () => {
       set({ streamState: INITIAL_STREAM });
     },
+    setPendingVoiceCommand: (pendingVoiceCommand) => set({ pendingVoiceCommand }),
 
     // ── Deep Research ─────────────────────────────────────────────
     deepResearch: false,

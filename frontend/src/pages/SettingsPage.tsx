@@ -37,6 +37,7 @@ import {
   type MemoryStats,
 } from '../lib/api';
 import { isAutoUpdateDisabled, setAutoUpdateDisabled } from '../components/Desktop/UpdateChecker';
+import { AudioSettingsPanel } from '../components/settings/AudioSettingsPanel';
 
 const CLOUD_KEY_STATUS_CHANGED = 'openjarvis-cloud-key-status-changed';
 
@@ -205,7 +206,7 @@ function CloudProviderStatus({ label, keyName }: { label: string; keyName: strin
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div
-      className="rounded-xl p-5"
+      className="zarek-glass-panel rounded-xl p-5"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
     >
       <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
@@ -805,8 +806,10 @@ export function SettingsPage() {
             </SettingRow>
           </Section>
 
-          {/* Speech */}
-          <Section title="Voz">
+          <AudioSettingsPanel />
+
+          {/* Speech output */}
+          <Section title="Salida de voz">
             <SettingRow label="Voz a texto" description="Activa el micrófono para dictado local">
               <button
                 onClick={() => { updateSettings({ speechEnabled: !settings.speechEnabled }); showSaved(); }}

@@ -25,6 +25,18 @@ function applyTheme() {
 
 applyTheme();
 
+// Service workers are useful for the browser PWA, but inside a Tauri WebView
+// they can keep serving an obsolete embedded frontend after an installer
+// upgrade. The desktop build is already available offline, so remove any
+// registration/cache left by an older version without touching user settings.
+if ('__TAURI_INTERNALS__' in window && 'serviceWorker' in navigator) {
+  void navigator.serviceWorker.getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    .then(() => ('caches' in window ? caches.keys() : []))
+    .then((cacheNames) => Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName))))
+    .catch(() => undefined);
+}
+
 // Fetch the API base URL from the Tauri backend before rendering.
 // This ensures JARVIS_PORT is defined in one place (the Rust backend).
 // In non-Tauri environments this is a no-op.

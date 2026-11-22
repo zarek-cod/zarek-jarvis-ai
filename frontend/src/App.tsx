@@ -7,9 +7,11 @@ import { DataSourcesPage } from './pages/DataSourcesPage';
 import { GetStartedPage } from './pages/GetStartedPage';
 import { LogsPage } from './pages/LogsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { VoiceModePage } from './pages/VoiceModePage';
 import { CommandPalette } from './components/CommandPalette';
 import { Layout } from './components/Layout';
 import { SetupScreen } from './components/SetupScreen';
+import { VoiceRuntime } from './components/VoiceRuntime';
 import { Toaster } from './components/ui/sonner';
 import {
   fetchModels,
@@ -42,7 +44,8 @@ export default function App() {
     root.classList.remove('dark', 'light');
     if (settings.theme === 'light') root.classList.add('light');
     else root.classList.add('dark');
-  }, [settings.theme]);
+    root.dataset.fontSize = settings.fontSize;
+  }, [settings.theme, settings.fontSize]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -112,6 +115,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<ChatPage />} />
+          <Route path="voice" element={<VoiceModePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="get-started" element={<GetStartedPage />} />
@@ -121,6 +125,7 @@ export default function App() {
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
+      <VoiceRuntime />
       {commandPaletteOpen && <CommandPalette />}
     </>
   );

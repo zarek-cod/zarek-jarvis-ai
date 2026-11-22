@@ -1,5 +1,21 @@
 # Changelog ZAREK
 
+## 2026-11-21 — v1.1.0
+
+- Rediseño premium con escenario ambiental, auroras, partículas, rayos, cristales oscuros y núcleo holográfico reactivo.
+- Nuevo **Modo Voz** inmersivo, separado del chat: sin campo de texto, núcleo grande, transcripción, respuesta automática por Kokoro y control de interrupción.
+- Tipografía Segoe UI Variable, escalado real pequeño/normal/grande y contraste reforzado en textos secundarios y controles de audio.
+- Nueva matriz de audio tipo Discord: enumeración de entradas físicas/virtuales, dispositivo persistente, medidor, prueba, sensibilidad, ganancia compatible, supresión, eco, AGC y detección de cambios.
+- `useSpeech` usa el `deviceId` elegido, VAD y corte por silencio, informa permisos/desconexiones y permite interrumpir TTS.
+- Activación local configurable “Jarvis”, tono, modo de dos frases y consentimiento explícito para escucha continua.
+- Segmentos WebM independientes para eliminar la latencia creciente de las marcas de tiempo de una grabación continua.
+- Atajo global `Ctrl + Shift + Espacio` corregido: muestra/enfoca la ventana y activa el micrófono.
+- Arranque instalado sin ventanas de terminal; preparación Python compatible con tags ZAREK y actualización segura del checkout administrado cuando está limpio.
+- Versión de escritorio 1.1.0, accesos directos NSIS y carpeta del menú Inicio `ZAREK SYSTEMS`.
+- Validación real instalada de la frase “Jarvis, dime cuál es tu nombre” y respuesta con “señor Zarek”.
+- La escucha continua ya no captura ni corta la propia salida de JARVIS; micrófono y atajo conservan la interrupción intencional.
+- El build Tauri excluye el service worker de la PWA y el instalador elimina su caché heredado para evitar que una actualización muestre una interfaz antigua.
+
 ## 2026-11-21 — Base inicial
 
 - Clonado OpenJarvis `5a9b5268` y creada la rama `zarek/development`.

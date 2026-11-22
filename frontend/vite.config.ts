@@ -13,7 +13,7 @@ const apiTarget = process.env.OPENJARVIS_VITE_PROXY_TARGET
   || process.env.VITE_API_URL
   || 'http://localhost:8000';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
@@ -22,7 +22,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    mode !== 'tauri' && VitePWA({
       registerType: 'autoUpdate',
       manifest: {
         name: 'ZAREK JARVIS AI',
@@ -79,4 +79,4 @@ export default defineConfig({
       '/api': apiTarget,
     },
   },
-});
+}));

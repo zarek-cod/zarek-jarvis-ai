@@ -1,7 +1,7 @@
 {
   "name": "zarek-jarvis-ai",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "packageManager": "npm@11.19.0",
   "engines": {
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:tauri": "tsc -b && vite build --outDir dist",
+    "build:tauri": "tsc -b && vite build --mode tauri --outDir dist",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run"

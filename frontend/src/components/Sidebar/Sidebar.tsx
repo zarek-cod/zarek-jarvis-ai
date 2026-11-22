@@ -17,6 +17,7 @@ import {
   Loader2,
   ScrollText,
   Database,
+  AudioLines,
 } from 'lucide-react';
 import { ConversationList } from './ConversationList';
 import { useAppStore } from '../../lib/store';
@@ -54,6 +55,7 @@ export function Sidebar() {
 
   const navItems = [
     { path: '/', icon: MessageSquare, label: 'Conversación' },
+    { path: '/voice', icon: AudioLines, label: 'Modo Voz' },
     { path: '/dashboard', icon: BarChart3, label: 'Sistema' },
     { path: '/data-sources', icon: Database, label: 'Fuentes de datos' },
     { path: '/agents', icon: Bot, label: 'Módulos' },

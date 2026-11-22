@@ -5,15 +5,20 @@ ZAREK JARVIS AI es una adaptación local-first de OpenJarvis para Windows 11. Co
 ## Funciones disponibles
 
 - Chat local con streaming mediante Ollama.
+- Modo Voz inmersivo independiente: núcleo grande, sin caja de texto y respuesta hablada automática.
 - Modelo principal `qwen3.5:4b` y modelo rápido opcional `qwen3.5:2b`.
 - Personalidad editable en `configs/zarek/ZAREK-SYSTEM.md`.
 - Dictado local con Faster-Whisper.
+- Selector completo de micrófonos de Windows con nivel en vivo, prueba y procesamiento configurable.
+- Activación local “Jarvis” opcional, palabra configurable y escucha continua solo con consentimiento.
+- Atajo global `Ctrl + Shift + Espacio`, botón de micrófono e interrupción de voz.
 - Voz masculina española local con Kokoro (`em_alex`).
 - ElevenLabs disponible como proveedor opcional; no se incluye ninguna clave.
 - Núcleo Canvas 2D con estados standby/listening/thinking/speaking/executing.
 - Reacción verdadera a audio mediante `AudioContext` y `AnalyserNode` (FFT de graves, medios y agudos).
 - Historial, memoria, métricas de GPU y credenciales de inferencia protegidas por Windows Credential Manager, heredadas de OpenJarvis.
 - Aplicación de escritorio Tauri con bandeja, atajo global, notificaciones y autostart.
+- Actualizaciones de escritorio sin frontend obsoleto: el instalador limpia solamente el caché de service worker heredado y conserva conversaciones y preferencias.
 
 ## Inicio rápido
 
@@ -29,6 +34,14 @@ Para la interfaz web durante desarrollo:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\zarek\start.ps1 -Web
 ```
+
+La instalación normal se abre sin VS Code con:
+
+```powershell
+Start-Process "$env:LOCALAPPDATA\ZAREK JARVIS AI\zarek-jarvis-desktop.exe"
+```
+
+Para usarla sin escribir, abra **Modo Voz** en la barra lateral. Diga “Jarvis”, pulse el núcleo o use `Ctrl + Shift + Espacio`; JARVIS escuchará la orden y leerá la respuesta. Pulse de nuevo el micrófono o el botón **Detener** para interrumpir la reproducción.
 
 Consulte `INSTALL-WINDOWS.md`, `VOICE-SETUP.md` y `SECURITY.md` antes de habilitar integraciones externas o herramientas de sistema.
 

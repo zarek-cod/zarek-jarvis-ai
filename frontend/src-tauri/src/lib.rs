@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::Mutex;
 
@@ -391,6 +391,59 @@ fn project_root_near_executable(exe: &std::path::Path) -> Option<std::path::Path
     }
 
     None
+}
+
+fn is_managed_zarek_checkout(root: &std::path::Path) -> bool {
+    root == std::path::PathBuf::from(home_dir()).join("OpenJarvis")
+}
+
+/// Update only the clean checkout created by the desktop installer. A local
+/// development checkout or a managed checkout with user edits is never
+/// modified. Network errors are non-fatal so ZAREK remains usable offline.
+async fn refresh_managed_zarek_checkout(root: &std::path::Path) -> bool {
+    if !is_managed_zarek_checkout(root) || !root.join(".git").is_dir() {
+        return false;
+    }
+    let git_bin = resolve_bin("git");
+    let run = |args: &[&str]| {
+        let mut command = tokio::process::Command::new(&git_bin);
+        command
+            .args(args)
+            .current_dir(root)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::null())
+            .kill_on_drop(true);
+        prepare_subprocess_for_appimage(&mut command);
+        command
+    };
+
+    let mut remote_command = run(&["remote", "get-url", "origin"]);
+    let Ok(Ok(remote)) =
+        tokio::time::timeout(Duration::from_secs(5), remote_command.output()).await
+    else {
+        return false;
+    };
+    let remote_url = String::from_utf8_lossy(&remote.stdout).to_ascii_lowercase();
+    if !remote.status.success() || !remote_url.contains("zarek-cod/zarek-jarvis-ai") {
+        return false;
+    }
+
+    let mut status_command = run(&["status", "--porcelain"]);
+    let Ok(Ok(worktree)) =
+        tokio::time::timeout(Duration::from_secs(5), status_command.output()).await
+    else {
+        return false;
+    };
+    if !worktree.status.success() || !worktree.stdout.is_empty() {
+        return false;
+    }
+
+    let mut pull_command = run(&["pull", "--ff-only", "--quiet", "origin", "main"]);
+    matches!(
+        tokio::time::timeout(Duration::from_secs(20), pull_command.output()).await,
+        Ok(Ok(output)) if output.status.success()
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -877,6 +930,14 @@ fn format_uv_sync_failure(root: &std::path::Path, exit_code: Option<i32>, stderr
 /// `#[cfg]` makes this a no-op on macOS / Windows.
 #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
 fn prepare_subprocess_for_appimage(cmd: &mut tokio::process::Command) {
+    #[cfg(target_os = "windows")]
+    {
+        // The desktop executable uses the Windows GUI subsystem. Without this
+        // flag, uv/git/Ollama can still summon a Windows Terminal window in
+        // front of ZAREK whenever the managed backend starts.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
     #[cfg(target_os = "linux")]
     {
         if std::env::var_os("APPIMAGE").is_some() {
@@ -921,6 +982,9 @@ fn rust_toolchain_install_hint() -> &'static str {
     allow(unused_variables)
 )]
 fn prepare_backend_python(cmd: &mut tokio::process::Command) {
+    // Hatch-VCS rejects older branded tags such as `v1.0.1-zarek`. The
+    // desktop release is authoritative for its managed runtime version.
+    cmd.env("SETUPTOOLS_SCM_PRETEND_VERSION", env!("CARGO_PKG_VERSION"));
     #[cfg(all(target_os = "windows", target_arch = "aarch64"))]
     {
         cmd.env("UV_PYTHON", "cpython-3.12-windows-x86_64-none");
@@ -1361,6 +1425,14 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 return;
             }
         }
+    }
+
+    if let Some(ref root) = project_root {
+        {
+            let mut s = status.lock().await;
+            s.detail = "Checking the managed ZAREK runtime...".into();
+        }
+        let _ = refresh_managed_zarek_checkout(root).await;
     }
 
     // If something is already serving on our port, decide what to do based
@@ -1975,6 +2047,8 @@ async fn run_jarvis_command(args: Vec<String>) -> Result<String, String> {
 
     let mut cmd = tokio::process::Command::new(&uv_bin);
     cmd.args(&cmd_args);
+    prepare_subprocess_for_appimage(&mut cmd);
+    prepare_backend_python(&mut cmd);
     // Run from the project root so `uv run jarvis` resolves the OpenJarvis
     // project regardless of the app's launch cwd. In a packaged install the
     // cwd isn't the checkout, so without this `jarvis` isn't found and the
@@ -3426,11 +3500,20 @@ pub fn run() {
                 let primary_modifier = Modifiers::CONTROL;
 
                 let sc = Shortcut::new(Some(primary_modifier | Modifiers::SHIFT), Code::Space);
-                if let Err(e) = app.global_shortcut().on_shortcut(sc, |_app, _sc, ev| {
+                if let Err(e) = app.global_shortcut().on_shortcut(sc, |app, _sc, ev| {
                     if ev.state == ShortcutState::Pressed {
                         #[cfg(target_os = "macos")]
                         unsafe {
                             native_overlay::toggle();
+                        }
+                        #[cfg(not(target_os = "macos"))]
+                        {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
+                            }
+                            let _ = app.emit("zarek://toggle-microphone", ());
                         }
                     }
                 }) {
@@ -3500,8 +3583,8 @@ mod tests {
     use super::{
         boot_plan, default_local_model, discard_pending_inference_setup_at,
         format_extension_import_failure, format_missing_rust_toolchain, format_port_unavailable,
-        format_uv_sync_failure, format_uv_sync_spawn_error, managed_cloud_key_names,
-        matching_installed_model, model_names_match, normalize_host,
+        format_uv_sync_failure, format_uv_sync_spawn_error, home_dir, is_managed_zarek_checkout,
+        managed_cloud_key_names, matching_installed_model, model_names_match, normalize_host,
         parse_configured_inference_config, parse_ollama_model_names,
         persist_confirmed_inference_config_at, preferred_installed_model,
         project_root_near_executable, reload_cloud_keys_for_owned_backend_at,
@@ -3594,6 +3677,15 @@ mod tests {
         assert_eq!(project_root_near_executable(&exe), Some(root.clone()));
 
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn only_home_openjarvis_is_treated_as_managed_checkout() {
+        let home = std::path::PathBuf::from(home_dir());
+        assert!(is_managed_zarek_checkout(&home.join("OpenJarvis")));
+        assert!(!is_managed_zarek_checkout(
+            &home.join("Desktop").join("Jarvis")
+        ));
     }
 
     #[test]
