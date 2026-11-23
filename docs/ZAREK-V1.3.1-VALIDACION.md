@@ -76,6 +76,10 @@ Tauri real.
 | Versión del instalador | 1.3.1 |
 | Arranque del ejecutable instalado | Aprobado |
 | Catálogo instalado | 6 perfiles |
+| Persistencia tras reinstalar y reabrir | Lyra conservada |
+| Muestra de Lyra en el `.exe` | Audio reproducido; núcleo en `TRANSMITIENDO` |
+| Interrupción de voz | Botón `Detener` aprobado |
+| Revisión visual a 1280 × 800 | Sin tarjetas ni controles ocultos |
 
 Comandos reproducibles:
 
@@ -91,9 +95,11 @@ npm --prefix .\frontend run tauri -- build --bundles nsis
 
 - Instalador: `frontend\src-tauri\target\release\bundle\nsis\ZAREK JARVIS AI_1.3.1_x64-setup.exe`
 - SHA-256 del instalador:
-  `98121B48AAE14E204E10A11D93B07ED98976F90253941BCC810E79F61349480C`
+  `EEA770ADF334A91077F224B09D51A45F7BCE5FBCF9A9AD6F7317FE46D08E58D5`
 - Ejecutable instalado:
   `C:\Users\joels\AppData\Local\ZAREK JARVIS AI\zarek-jarvis-desktop.exe`
+- SHA-256 del ejecutable instalado:
+  `052A7BABC487F8F73545EB37B783310509206136A4BBC0EA2AC2AF83FB60435A`
 - Versión de archivo y producto comprobada: `1.3.1`.
 - El instalador comunitario no está firmado con Authenticode.
 
