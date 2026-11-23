@@ -38,6 +38,7 @@ def get_tts_backend(
     preferred: str = "",
     *,
     attempted: Optional[set[str]] = None,
+    strict: bool = False,
 ) -> Optional[Any]:
     """Return the first healthy TTS backend, preferring *preferred*.
 
@@ -51,7 +52,12 @@ def get_tts_backend(
 
     seen = attempted if attempted is not None else set()
 
-    for key in dict.fromkeys((preferred, *TTS_BACKEND_ORDER)):
+    candidates = (
+        (preferred,)
+        if strict and preferred
+        else (preferred, *TTS_BACKEND_ORDER)
+    )
+    for key in dict.fromkeys(candidates):
         if not key or key in seen:
             continue
         seen.add(key)

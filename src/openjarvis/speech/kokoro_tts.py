@@ -325,6 +325,12 @@ class KokoroTTSBackend(TTSBackend):
             "ef_dora",
             "em_alex",
             "em_santa",
+            # Same-language speaker-embedding blends supported natively by
+            # KPipeline.load_voice(). These are distinct timbres, not speed or
+            # pitch aliases.
+            "ef_dora,em_alex",
+            "em_alex,em_santa",
+            "ef_dora,em_santa",
             # Mandarin Chinese
             "zf_xiaobei",
             "zf_xiaoni",

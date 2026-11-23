@@ -35,6 +35,10 @@ export function AmbientStage() {
       <div className="zarek-galaxy is-violet" />
       <div className="zarek-galaxy is-blue" />
       <div className="zarek-star-depth" />
+      <div className="zarek-volumetric-beam" />
+      <div className="zarek-gravity-wave is-one" />
+      <div className="zarek-gravity-wave is-two" />
+      <div className="zarek-energy-collision"><span /><i /></div>
       <div className="zarek-aurora is-left" />
       <div className="zarek-aurora is-right" />
       <div className="zarek-lightning is-one"><span /><i /><b /></div>

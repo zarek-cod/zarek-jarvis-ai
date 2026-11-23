@@ -8,6 +8,7 @@ import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
 import { resolveResponseBudget } from '../../lib/response-budget';
 import { useVoiceLatencyStore } from '../../lib/voice-latency';
+import { buildAddressPreference } from '../../lib/personality';
 import {
   engineFromCompletionChunk,
   resolveChatEngine,
@@ -97,6 +98,8 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
   const maxTokens = useAppStore((s) => s.settings.maxTokens);
   const temperature = useAppStore((s) => s.settings.temperature);
+  const preferredName = useAppStore((s) => s.settings.preferredName);
+  const addressPreference = useAppStore((s) => s.settings.addressPreference);
   const createConversation = useAppStore((s) => s.createConversation);
   const addMessage = useAppStore((s) => s.addMessage);
   const updateLastAssistant = useAppStore((s) => s.updateLastAssistant);
@@ -206,10 +209,14 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
 
     // Build API messages before adding assistant placeholder
     const currentMessages = useAppStore.getState().messages;
-    const apiMessages = currentMessages.map((m) => ({
+    const apiMessages: Array<{ role: string; content: string }> = currentMessages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
+    apiMessages.unshift({
+      role: 'system',
+      content: buildAddressPreference(preferredName, addressPreference),
+    });
 
     const assistantMsg: ChatMessage = {
       id: generateId(),
@@ -572,6 +579,8 @@ export function InputArea({ variant = 'chat' }: { variant?: 'chat' | 'voice' }) 
     temperature,
     maxTokens,
     variant,
+    preferredName,
+    addressPreference,
   ]);
 
   useEffect(() => {

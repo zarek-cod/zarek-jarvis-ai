@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { synthesizeSpeech, fetchTtsHealth } from './api';
 import { splitSpeakableText } from './message-text';
 import { attachPlaybackReactivity, stopPlaybackReactivity } from './audio-reactor';
+import { useAppStore } from './store';
 
 export type TtsState = 'idle' | 'loading' | 'speaking';
 
@@ -43,6 +44,12 @@ let healthProbe: Promise<void> | null = null;
 let queuedChunks: string[] = [];
 let preparedChunk: Promise<{ blob?: Blob; error?: unknown }> | null = null;
 let primeQueue: (() => void) | null = null;
+let activePreferences: {
+  backend: string;
+  voiceId: string;
+  speed: number;
+  volume: number;
+} | null = null;
 
 /** Only a stream ending in the active conversation may trigger autoplay. */
 export function shouldAutoplayFinishedReply(
@@ -84,6 +91,7 @@ function teardown(): void {
   queuedChunks = [];
   preparedChunk = null;
   primeQueue = null;
+  activePreferences = null;
 }
 
 function releaseCurrentAudio(): void {
@@ -148,6 +156,13 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
     const mine = token;
     teardown();
     queuedChunks = chunks.slice(1);
+    const output = useAppStore.getState().settings;
+    activePreferences = {
+      backend: output.ttsProvider,
+      voiceId: output.ttsVoiceId,
+      speed: output.ttsVoiceSpeed,
+      volume: output.ttsVoiceVolume,
+    };
     set({ state: 'loading', speakingId: id, error: null, errorId: null, firstAudioMs: null });
 
     const ac = new AbortController();
@@ -171,7 +186,12 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
       const nextText = queuedChunks.shift()!;
       // Always resolve to a tagged result so an interrupted prefetch can never
       // become an unhandled promise rejection after its audio handler is gone.
-      preparedChunk = synthesizeSpeech(nextText, { signal: ac.signal })
+      preparedChunk = synthesizeSpeech(nextText, {
+        signal: ac.signal,
+        backend: activePreferences?.backend,
+        voiceId: activePreferences?.voiceId,
+        speed: activePreferences?.speed,
+      })
         .then((blob) => ({ blob }))
         .catch((error) => ({ error }));
     };
@@ -183,6 +203,7 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
       const url = URL.createObjectURL(blob);
       objectUrl = url;
       const el = new Audio(url);
+      el.volume = Math.max(0, Math.min(1, activePreferences?.volume ?? 1));
       audio = el;
       await attachPlaybackReactivity(el);
 
@@ -217,7 +238,12 @@ export const useTtsStore = create<TtsStore>((set, get) => ({
     };
 
     try {
-      const blob = await synthesizeSpeech(chunks[0], { signal: ac.signal });
+      const blob = await synthesizeSpeech(chunks[0], {
+        signal: ac.signal,
+        backend: activePreferences?.backend,
+        voiceId: activePreferences?.voiceId,
+        speed: activePreferences?.speed,
+      });
       if (mine !== token) return;
       await playChunk(blob);
     } catch (err) {

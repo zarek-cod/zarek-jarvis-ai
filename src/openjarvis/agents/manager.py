@@ -400,7 +400,7 @@ class AgentManager:
         self._conn.execute(
             "DELETE FROM agent_checkpoints WHERE agent_id = ? AND id NOT IN "
             "(SELECT id FROM agent_checkpoints WHERE agent_id = ?"
-            " ORDER BY created_at DESC LIMIT ?)",
+            " ORDER BY created_at DESC, rowid DESC LIMIT ?)",
             (agent_id, agent_id, self._CHECKPOINT_RETENTION),
         )
         self._conn.commit()
@@ -415,7 +415,7 @@ class AgentManager:
     def list_checkpoints(self, agent_id: str) -> list:
         rows = self._conn.execute(
             "SELECT * FROM agent_checkpoints"
-            " WHERE agent_id = ? ORDER BY created_at DESC",
+            " WHERE agent_id = ? ORDER BY created_at DESC, rowid DESC",
             (agent_id,),
         ).fetchall()
         return [self._row_to_checkpoint(r) for r in rows]
@@ -424,7 +424,7 @@ class AgentManager:
     def get_latest_checkpoint(self, agent_id: str) -> Optional[Dict[str, Any]]:
         row = self._conn.execute(
             "SELECT * FROM agent_checkpoints"
-            " WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1",
+            " WHERE agent_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
             (agent_id,),
         ).fetchone()
         return self._row_to_checkpoint(row) if row else None

@@ -220,6 +220,46 @@ def test_synthesize_honours_request_overrides(mock_tts_backend):
     assert kwargs["speed"] == 1.5
 
 
+def test_synthesize_resolves_explicit_provider_strictly(mock_tts_backend):
+    selected = MagicMock()
+    selected.backend_id = "kokoro"
+    selected.health.return_value = True
+    selected.synthesize.return_value = mock_tts_backend.synthesize.return_value
+    client = _tts_app(mock_tts_backend)
+
+    with patch(
+        "openjarvis.speech._tts_discovery.get_tts_backend",
+        return_value=selected,
+    ) as discover:
+        response = client.post(
+            "/v1/speech/synthesize",
+            json={
+                "text": "Sistema listo",
+                "backend": "kokoro",
+                "voice_id": "ef_dora,em_alex",
+            },
+        )
+
+    assert response.status_code == 200
+    discover.assert_called_once_with("kokoro", strict=True)
+    assert selected.synthesize.call_args.kwargs["voice_id"] == "ef_dora,em_alex"
+
+
+def test_synthesize_rejects_unavailable_explicit_provider(mock_tts_backend):
+    client = _tts_app(mock_tts_backend)
+    with patch(
+        "openjarvis.speech._tts_discovery.get_tts_backend",
+        return_value=None,
+    ):
+        response = client.post(
+            "/v1/speech/synthesize",
+            json={"text": "Hola", "backend": "elevenlabs"},
+        )
+
+    assert response.status_code == 501
+    assert "elevenlabs" in response.json()["detail"]
+
+
 def test_synthesize_rejects_empty_text(mock_tts_backend):
     client = _tts_app(mock_tts_backend)
 
@@ -332,6 +372,19 @@ def test_tts_health_without_backend():
 
     assert data["available"] is False
     assert "reason" in data
+
+
+def test_voice_catalog_lists_spanish_profiles_without_loading_models():
+    client = _tts_app(None)
+    data = client.get("/v1/speech/voices").json()
+
+    assert len(data["voices"]) >= 5
+    assert {voice["backend"] for voice in data["voices"]} == {"kokoro"}
+    assert all(voice["available"] for voice in data["voices"])
+    assert {provider["id"] for provider in data["providers"]} >= {
+        "kokoro",
+        "elevenlabs",
+    }
 
 
 def test_tts_health_retries_after_unavailable(mock_tts_backend):

@@ -2,7 +2,7 @@
 
 ## Abrir la aplicación instalada
 
-El instalador 1.2.0 crea accesos directos en el Escritorio y en el menú Inicio (`ZAREK SYSTEMS`). El ejecutable verificado queda exactamente en:
+El instalador 1.3.0 crea accesos directos en el Escritorio y en el menú Inicio (`ZAREK SYSTEMS`). El ejecutable verificado queda exactamente en:
 
 ```text
 C:\Users\joels\AppData\Local\ZAREK JARVIS AI\zarek-jarvis-desktop.exe
@@ -34,7 +34,19 @@ Para hablar, use el botón del micrófono o `Ctrl + Shift + Espacio`. Para “Ja
 - Al terminar de generar, Kokoro lee automáticamente la respuesta. Mientras habla aparecen **JARVIS está hablando** y el botón **Detener**.
 - Para interrumpir y volver a hablar, pulse el micrófono grande o `Ctrl + Shift + Espacio`; ambos detienen primero la voz de JARVIS.
 
-El instalador 1.2.0 elimina el caché de service worker dejado por versiones antiguas de la interfaz. No borra conversaciones, dispositivos elegidos ni preferencias.
+## Elegir la voz de JARVIS
+
+1. Abra **Configuración > Voz y personalidad**.
+2. Mantenga **Kokoro local** para usar las seis opciones gratuitas sin API.
+3. Pulse **Escuchar muestra** en Atlas, Vega, Orión, Nova, Titán o Lyra.
+4. Pulse **Seleccionar**; la siguiente respuesta usará la nueva voz sin reiniciar.
+5. Ajuste velocidad, volumen, lectura automática y el tratamiento personal.
+
+La primera muestra puede tardar mientras se prepara el modelo; después queda
+en caché local. ElevenLabs es opcional y solo funciona si el usuario aporta su
+propia clave. El tono se muestra como no compatible para Kokoro.
+
+El instalador 1.3.0 elimina el caché de service worker dejado por versiones antiguas de la interfaz. No borra conversaciones, dispositivos elegidos ni preferencias.
 
 ## Requisitos verificados para este equipo
 
@@ -76,7 +88,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\zarek\build.ps1
 
 Los artefactos de Tauri se generan bajo `frontend\src-tauri\target\release\bundle`.
 
-El instalador comunitario `v1.2.0` no está firmado con Authenticode. Antes de ejecutarlo, compare su SHA-256 con el valor publicado en la release y en `VALIDATION.md`.
+El instalador comunitario `v1.3.0` no está firmado con Authenticode. Antes de ejecutarlo, compare su SHA-256 con el valor publicado en la release y en `VALIDATION.md`.
 
 ## Actualizar desde OpenJarvis
 

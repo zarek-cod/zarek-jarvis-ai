@@ -101,6 +101,12 @@ class WhatsAppBaileysChannel(BaseChannel):
                 "Node.js is required for WhatsAppBaileysChannel but 'node' "
                 "was not found on PATH.  Install Node.js 22+ and try again."
             )
+        npm_executable = shutil.which("npm")
+        if npm_executable is None:
+            raise RuntimeError(
+                "npm is required for WhatsAppBaileysChannel but was not "
+                "found on PATH. Install Node.js 22+ and try again."
+            )
 
         runtime = self._runtime_dir
         runtime.mkdir(parents=True, exist_ok=True)
@@ -126,7 +132,7 @@ class WhatsAppBaileysChannel(BaseChannel):
         if not node_modules.exists():
             logger.info("Running npm install in %s", runtime)
             subprocess.run(
-                ["npm", "install", "--production"],
+                [npm_executable, "install", "--production"],
                 cwd=str(runtime),
                 check=True,
                 capture_output=True,

@@ -42,6 +42,22 @@ const OPTIN_EMAIL_KEY = 'openjarvis-email';
 const OPTIN_ANONID_KEY = 'openjarvis-anon-id';
 const OPTIN_SEEN_KEY = 'openjarvis-optin-seen';
 
+function readLocalValue(key: string): string | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalValue(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+  } catch {
+    // Settings remain usable for this session when storage is unavailable.
+  }
+}
+
 interface ConversationStore {
   version: 1;
   conversations: Record<string, Conversation>;
@@ -54,7 +70,7 @@ function generateId(): string {
 
 function loadConversations(): ConversationStore {
   try {
-    const raw = localStorage.getItem(CONVERSATIONS_KEY);
+    const raw = readLocalValue(CONVERSATIONS_KEY);
     if (!raw) return { version: 1, conversations: {}, activeId: null };
     const parsed = JSON.parse(raw);
     if (parsed.version === 1) {
@@ -72,7 +88,7 @@ function loadConversations(): ConversationStore {
       }
       if (repaired) {
         try {
-          localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(parsed));
+          writeLocalValue(CONVERSATIONS_KEY, JSON.stringify(parsed));
         } catch {
           // Keep the repaired conversations usable in memory when storage is
           // read-only or full. A failed best-effort writeback must not make
@@ -88,11 +104,13 @@ function loadConversations(): ConversationStore {
 }
 
 function saveConversations(store: ConversationStore): void {
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(store));
+  writeLocalValue(CONVERSATIONS_KEY, JSON.stringify(store));
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type GraphicsQuality = 'low' | 'balanced' | 'ultra';
+export type TtsProvider = 'kokoro' | 'elevenlabs';
+export type AddressPreference = 'formal' | 'name' | 'neutral';
 
 export interface Settings {
   theme: ThemeMode;
@@ -112,6 +130,12 @@ export interface Settings {
   speechEnabled: boolean;
   voiceOutputEnabled: boolean;
   voiceAutoplay: boolean;
+  ttsProvider: TtsProvider;
+  ttsVoiceId: string;
+  ttsVoiceSpeed: number;
+  ttsVoiceVolume: number;
+  preferredName: string;
+  addressPreference: AddressPreference;
   audioInputDeviceId: string;
   microphoneSensitivity: number;
   microphoneGain: number;
@@ -144,6 +168,12 @@ function loadSettings(): Settings {
     speechEnabled: false,
     voiceOutputEnabled: true,
     voiceAutoplay: true,
+    ttsProvider: 'kokoro',
+    ttsVoiceId: 'em_alex',
+    ttsVoiceSpeed: 0.96,
+    ttsVoiceVolume: 0.92,
+    preferredName: 'Zarek',
+    addressPreference: 'formal',
     audioInputDeviceId: 'default',
     microphoneSensitivity: 0.12,
     microphoneGain: 1,
@@ -159,7 +189,7 @@ function loadSettings(): Settings {
     timeZone: '',
   };
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = readLocalValue(SETTINGS_KEY);
     if (!raw) return defaults;
     return { ...defaults, ...JSON.parse(raw) };
   } catch {
@@ -168,7 +198,7 @@ function loadSettings(): Settings {
 }
 
 function saveSettings(settings: Settings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  writeLocalValue(SETTINGS_KEY, JSON.stringify(settings));
 }
 
 // ── Store ─────────────────────────────────────────────────────────────
@@ -329,11 +359,11 @@ export const useAppStore = create<AppState>((set, get) => {
     sidebarOpen: true,
     systemPanelOpen: true,
 
-    optInEnabled: localStorage.getItem(OPTIN_KEY) === 'true',
-    optInDisplayName: localStorage.getItem(OPTIN_NAME_KEY) || '',
-    optInEmail: localStorage.getItem(OPTIN_EMAIL_KEY) || '',
-    optInAnonId: localStorage.getItem(OPTIN_ANONID_KEY) || crypto.randomUUID(),
-    optInModalSeen: localStorage.getItem(OPTIN_SEEN_KEY) === 'true',
+    optInEnabled: readLocalValue(OPTIN_KEY) === 'true',
+    optInDisplayName: readLocalValue(OPTIN_NAME_KEY) || '',
+    optInEmail: readLocalValue(OPTIN_EMAIL_KEY) || '',
+    optInAnonId: readLocalValue(OPTIN_ANONID_KEY) || crypto.randomUUID(),
+    optInModalSeen: readLocalValue(OPTIN_SEEN_KEY) === 'true',
     optInModalOpen: false,
 
     // ── Conversations ───────────────────────────────────────────────
@@ -619,15 +649,15 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setOptIn: (enabled: boolean, displayName: string, email: string) => {
       const anonId = get().optInAnonId;
-      localStorage.setItem(OPTIN_KEY, String(enabled));
-      localStorage.setItem(OPTIN_NAME_KEY, displayName);
-      localStorage.setItem(OPTIN_EMAIL_KEY, email);
-      localStorage.setItem(OPTIN_ANONID_KEY, anonId);
+      writeLocalValue(OPTIN_KEY, String(enabled));
+      writeLocalValue(OPTIN_NAME_KEY, displayName);
+      writeLocalValue(OPTIN_EMAIL_KEY, email);
+      writeLocalValue(OPTIN_ANONID_KEY, anonId);
       set({ optInEnabled: enabled, optInDisplayName: displayName, optInEmail: email });
     },
     setOptInModalOpen: (open: boolean) => set({ optInModalOpen: open }),
     markOptInModalSeen: () => {
-      localStorage.setItem(OPTIN_SEEN_KEY, 'true');
+      writeLocalValue(OPTIN_SEEN_KEY, 'true');
       set({ optInModalSeen: true });
     },
   };

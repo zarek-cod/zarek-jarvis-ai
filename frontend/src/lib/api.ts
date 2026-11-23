@@ -414,14 +414,50 @@ export interface TtsHealth {
   reason?: string;
 }
 
+export interface VoiceProfile {
+  id: string;
+  name: string;
+  voice_id: string;
+  backend: string;
+  gender: string;
+  language: string;
+  accent: string;
+  style: string;
+  preview_text: string;
+  available: boolean;
+  delivery: string;
+  license: string;
+  license_url: string;
+  pitch_supported: boolean;
+  speed_supported: boolean;
+  volume_supported: boolean;
+}
+
+export interface VoiceProvider {
+  id: string;
+  name: string;
+  free: boolean;
+  requires_key: boolean;
+}
+
+export interface VoiceCatalog {
+  voices: VoiceProfile[];
+  providers: VoiceProvider[];
+}
+
 export async function synthesizeSpeech(
   text: string,
-  opts: { voiceId?: string; speed?: number; signal?: AbortSignal } = {},
+  opts: { voiceId?: string; speed?: number; backend?: string; signal?: AbortSignal } = {},
 ): Promise<Blob> {
   const res = await apiFetch(`/v1/speech/synthesize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, voice_id: opts.voiceId, speed: opts.speed }),
+    body: JSON.stringify({
+      text,
+      voice_id: opts.voiceId,
+      speed: opts.speed,
+      backend: opts.backend,
+    }),
     signal: opts.signal,
   });
   if (!res.ok) {
@@ -437,9 +473,16 @@ export async function synthesizeSpeech(
   return res.blob();
 }
 
-export async function fetchTtsHealth(): Promise<TtsHealth> {
-  const res = await apiFetch(`/v1/speech/tts/health`);
+export async function fetchTtsHealth(backend = ''): Promise<TtsHealth> {
+  const query = backend ? `?backend=${encodeURIComponent(backend)}` : '';
+  const res = await apiFetch(`/v1/speech/tts/health${query}`);
   if (!res.ok) return { available: false };
+  return res.json();
+}
+
+export async function fetchVoiceCatalog(): Promise<VoiceCatalog> {
+  const res = await apiFetch('/v1/speech/voices');
+  if (!res.ok) throw new Error(`No se pudo cargar el catálogo de voces: ${res.status}`);
   return res.json();
 }
 

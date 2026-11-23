@@ -1,5 +1,18 @@
 # Changelog ZAREK
 
+## 2026-11-23 — v1.3.0
+
+- Seis perfiles españoles reales de Kokoro: tres voces base y tres mezclas de embeddings admitidas por el motor.
+- Nuevo catálogo `/v1/speech/voices` con capacidades, disponibilidad y licencia Apache-2.0.
+- Selector premium **Voz y personalidad** con muestras, caché, proveedor, selección inmediata, velocidad, volumen y tratamiento personal.
+- Persistencia local de proveedor, `voice_id`, velocidad, volumen, nombre y forma de dirigirse al usuario.
+- Proveedor TTS explícito por solicitud, sin fallback silencioso cuando una opción elegida no está disponible.
+- Kokoro progresivo conserva el mismo perfil durante toda la respuesta y sincroniza muestras y lectura con el reactor del núcleo.
+- Luz volumétrica, ondas gravitacionales y colisión energética adaptadas a los niveles de calidad gráfica.
+- Prompt y contexto de trato refinados para respuestas naturales, completas y sin autorizaciones implícitas.
+- Correcciones Windows para checkpoints con timestamps iguales, temporización de benchmarks y ejecución de `npm.cmd`.
+- Instalador y ejecutable Windows actualizados a 1.3.0.
+
 ## 2026-11-22 — v1.2.0
 
 - STT español con VAD explícito, confianza, probabilidad de no-voz y conservación de la transcripción original.

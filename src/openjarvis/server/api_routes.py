@@ -38,6 +38,7 @@ class SpeechSynthesizeRequest(BaseModel):
     text: str
     voice_id: Optional[str] = None
     speed: Optional[float] = None
+    backend: Optional[str] = None
 
 
 class MemoryStoreRequest(BaseModel):
@@ -1117,6 +1118,21 @@ async def _resolve_tts_backend(request: Request):
     return backend
 
 
+async def _resolve_requested_tts_backend(request: Request, backend_id: str = ""):
+    """Resolve an explicitly selected provider without silently changing it."""
+    if not backend_id:
+        return await _resolve_tts_backend(request)
+
+    app = request.app
+    cached = getattr(app.state, "tts_backend", None)
+    if getattr(cached, "backend_id", "") == backend_id:
+        return cached
+
+    from openjarvis.speech._tts_discovery import get_tts_backend
+
+    return await asyncio.to_thread(get_tts_backend, backend_id, strict=True)
+
+
 def _tts_voice_and_speed(request: Request, backend) -> tuple[str, float]:
     """Resolve the voice ID and speed to use with *backend*.
 
@@ -1149,10 +1165,15 @@ async def synthesize_speech(request: Request, body: SpeechSynthesizeRequest):
             detail=f"Text exceeds {_MAX_TTS_CHARS} characters",
         )
 
-    backend = await _resolve_tts_backend(request)
+    backend = await _resolve_requested_tts_backend(request, body.backend or "")
     if backend is None:
         raise HTTPException(
-            status_code=501, detail="No text-to-speech backend available"
+            status_code=501,
+            detail=(
+                f"Text-to-speech provider {body.backend!r} is not available"
+                if body.backend
+                else "No text-to-speech backend available"
+            ),
         )
 
     voice_id, speed = _tts_voice_and_speed(request, backend)
@@ -1170,6 +1191,12 @@ async def synthesize_speech(request: Request, body: SpeechSynthesizeRequest):
             output_format="wav",
         )
     except Exception as exc:
+        if body.backend:
+            logger.exception("Selected speech provider failed: %s", body.backend)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Speech synthesis failed for provider {body.backend}",
+            ) from exc
         # Cloud services can become unavailable between a successful health
         # check and synthesis (for example when a plan exhausts its credits).
         # Retry once with the private local engine; a provider-specific voice
@@ -1225,18 +1252,42 @@ async def synthesize_speech(request: Request, body: SpeechSynthesizeRequest):
 
 
 @speech_router.get("/tts/health")
-async def tts_health(request: Request):
+async def tts_health(request: Request, backend: str = ""):
     """Report whether voice output is available, and with which voice."""
-    backend = await _resolve_tts_backend(request)
-    if backend is None:
+    resolved = await _resolve_requested_tts_backend(request, backend)
+    if resolved is None:
         return {"available": False, "reason": "No text-to-speech backend available"}
 
-    voice_id, speed = _tts_voice_and_speed(request, backend)
+    voice_id, speed = _tts_voice_and_speed(request, resolved)
     return {
         "available": True,
-        "backend": getattr(backend, "backend_id", ""),
+        "backend": getattr(resolved, "backend_id", ""),
         "voice_id": voice_id,
         "speed": speed,
+    }
+
+
+@speech_router.get("/voices")
+async def list_speech_voices():
+    """Return the curated, license-labelled Spanish desktop catalog."""
+    from openjarvis.speech.voice_catalog import spanish_voice_catalog
+
+    return {
+        "voices": spanish_voice_catalog(),
+        "providers": [
+            {
+                "id": "kokoro",
+                "name": "Kokoro local",
+                "free": True,
+                "requires_key": False,
+            },
+            {
+                "id": "elevenlabs",
+                "name": "ElevenLabs",
+                "free": False,
+                "requires_key": True,
+            },
+        ],
     }
 
 

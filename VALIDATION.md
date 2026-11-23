@@ -1,6 +1,49 @@
 # Validación de ZAREK JARVIS AI
 
-Fecha de última validación: 2026-11-22 (America/Lima).
+Fecha de última validación: 2026-11-23 (America/Lima).
+
+## Versión 1.3.0 — validación final (2026-11-23)
+
+| Prueba | Resultado observado |
+|---|---|
+| Frontend Vitest | 143/143 correctas |
+| TypeScript + Vite | Build web y build Tauri correctos |
+| Rust/Tauri | 51/51 correctas |
+| Backend dirigido de voz/API | 70 correctas, 1 omitida |
+| Backend relevante (voz, herramientas, seguridad y servidor) | 2.509 correctas, 25 omitidas, 1 fallo por DNS externo bloqueado |
+| Catálogo Kokoro | 6 perfiles españoles, 6 WAV RIFF y 6 huellas distintas con el mismo texto |
+| Persistencia | Proveedor, voz, velocidad y volumen restaurados en prueba de recarga |
+| Reacción visual | Muestras y respuestas conectadas al analizador FFT existente |
+| UI | Revisada a 1.440 px y al mínimo de 900 px sin solapamientos |
+| Modelo local | Se compararon Qwen3.5 2B y 4B; se conserva 4B por mayor prudencia/calidad |
+| Instalador NSIS | Generado e instalado; `FileVersion` y `ProductVersion` 1.3.0 |
+
+Voces reales probadas con la misma frase:
+
+| Perfil | `voice_id` | Bytes | Duración | Síntesis | SHA-256 (12) |
+|---|---|---:|---:|---:|---|
+| Atlas | `em_alex` | 199.244 | 4,15 s | 7,46 s en frío | `56aa52c492a1` |
+| Vega | `ef_dora` | 196.844 | 4,10 s | 0,90 s | `06ee0d53841d` |
+| Orión | `em_santa` | 198.044 | 4,12 s | 0,90 s | `16058bfb799f` |
+| Nova | `ef_dora,em_alex` | 198.044 | 4,12 s | 0,80 s | `581b1624fc63` |
+| Titán | `em_alex,em_santa` | 198.044 | 4,12 s | 0,83 s | `49b904a46d13` |
+| Lyra | `ef_dora,em_santa` | 198.044 | 4,12 s | 0,81 s | `f8da38e066c7` |
+
+Artefactos finales:
+
+- Instalador: `C:\Users\joels\Desktop\Jarvis\frontend\src-tauri\target\release\bundle\nsis\ZAREK JARVIS AI_1.3.0_x64-setup.exe`.
+- Tamaño: 8.210.377 bytes.
+- SHA-256: `57B6F17652D6E57C88051D376F39B9D37B8E2AA7CA67287B4A6C6D7AEDEA584E`.
+- Ejecutable instalado: `C:\Users\joels\AppData\Local\ZAREK JARVIS AI\zarek-jarvis-desktop.exe`.
+- Versión instalada observada: 1.3.0.
+- Firma Authenticode: no disponible en esta edición comunitaria.
+
+La prueba dependiente de DNS intentó validar `https://example.com/feed.xml`.
+El host no resolvió en el entorno y la protección SSRF devolvió 400. No se
+considera una regresión de voz ni se debilitó la validación para forzar el
+resultado. La suite total también se ejecutó: antes del corte de 50 fallos de
+plataforma/conectores live había 3.354 correctas y 13 omitidas. El detalle está
+en `docs/ZAREK-V1.3-IMPLEMENTATION.md`.
 
 ## Versión 1.2.0 — validación final (2026-11-22)
 

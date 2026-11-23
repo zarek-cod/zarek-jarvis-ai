@@ -7,6 +7,7 @@ vi.mock('./api', () => ({
 
 import { synthesizeSpeech, fetchTtsHealth } from './api';
 import { useTtsStore, __resetTtsForTests, shouldAutoplayFinishedReply } from './tts';
+import { useAppStore } from './store';
 
 const synth = vi.mocked(synthesizeSpeech);
 const health = vi.mocked(fetchTtsHealth);
@@ -19,6 +20,7 @@ class FakeAudio {
   src: string;
   paused = false;
   playCalls = 0;
+  volume = 1;
 
   constructor(src: string) {
     this.src = src;
@@ -89,6 +91,30 @@ describe('shared voice output', () => {
     expect(FakeAudio.instances[0].playCalls).toBe(1);
     expect(useTtsStore.getState().state).toBe('speaking');
     expect(useTtsStore.getState().speakingId).toBe('m1');
+  });
+
+  it('uses the selected provider, voice, speed and volume immediately', async () => {
+    synth.mockResolvedValue(new Blob(['wav']));
+    const previous = useAppStore.getState().settings;
+    useAppStore.setState({
+      settings: {
+        ...previous,
+        ttsProvider: 'kokoro',
+        ttsVoiceId: 'ef_dora,em_alex',
+        ttsVoiceSpeed: 1.08,
+        ttsVoiceVolume: 0.55,
+      },
+    });
+
+    await useTtsStore.getState().speak('voice-profile', 'Sistema listo.');
+
+    expect(synth.mock.calls[0][1]).toMatchObject({
+      backend: 'kokoro',
+      voiceId: 'ef_dora,em_alex',
+      speed: 1.08,
+    });
+    expect(FakeAudio.instances[0].volume).toBe(0.55);
+    useAppStore.setState({ settings: previous });
   });
 
   it('prefetches and plays a long reply phrase by phrase in order', async () => {

@@ -12,7 +12,6 @@ import {
   Download,
   Upload,
   Trash2,
-  Mic,
   Key,
   Search,
   Brain,
@@ -22,8 +21,6 @@ import { useAppStore, type ThemeMode } from '../lib/store';
 import { deviceTimeZone, listTimeZones, resolveTimeZone, utcOffsetLabel } from '../lib/timezone';
 import {
   checkHealth,
-  fetchSpeechHealth,
-  fetchTtsHealth,
   getMemoryStats,
   getInferenceSource,
   setInferenceSource,
@@ -39,6 +36,7 @@ import {
 import { isAutoUpdateDisabled, setAutoUpdateDisabled } from '../components/Desktop/UpdateChecker';
 import { AudioSettingsPanel } from '../components/settings/AudioSettingsPanel';
 import { PermissionsSettingsPanel } from '../components/settings/PermissionsSettingsPanel';
+import { VoicePersonalityPanel } from '../components/settings/VoicePersonalityPanel';
 
 const CLOUD_KEY_STATUS_CHANGED = 'openjarvis-cloud-key-status-changed';
 
@@ -295,8 +293,6 @@ export function SettingsPage() {
   const conversations = useAppStore((s) => s.conversations);
   const serverInfo = useAppStore((s) => s.serverInfo);
   const [healthy, setHealthy] = useState<boolean | null>(null);
-  const [speechBackendAvailable, setSpeechBackendAvailable] = useState<boolean | null>(null);
-  const [ttsBackend, setTtsBackend] = useState<{ available: boolean; backend?: string; voice_id?: string } | null>(null);
   const [saved, setSaved] = useState(false);
 
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(() => !isAutoUpdateDisabled());
@@ -397,12 +393,6 @@ export function SettingsPage() {
 
   useEffect(() => {
     checkHealth().then(setHealthy);
-    fetchSpeechHealth()
-      .then((h) => setSpeechBackendAvailable(h.available))
-      .catch(() => setSpeechBackendAvailable(false));
-    fetchTtsHealth()
-      .then((h) => setTtsBackend(h))
-      .catch(() => setTtsBackend({ available: false }));
   }, []);
 
   const showSaved = () => {
@@ -820,103 +810,8 @@ export function SettingsPage() {
           </Section>
 
           <AudioSettingsPanel />
+          <VoicePersonalityPanel />
           <PermissionsSettingsPanel />
-
-          {/* Speech output */}
-          <Section title="Salida de voz">
-            <SettingRow label="Voz a texto" description="Activa el micrófono para dictado local">
-              <button
-                onClick={() => { updateSettings({ speechEnabled: !settings.speechEnabled }); showSaved(); }}
-                className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
-                style={{
-                  background: settings.speechEnabled ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                }}
-              >
-                <span
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
-                  style={{
-                    transform: settings.speechEnabled ? 'translateX(20px)' : 'translateX(0)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }}
-                />
-              </button>
-            </SettingRow>
-            <SettingRow label="Texto a voz" description="Muestra el botón para leer respuestas en voz alta">
-              <button
-                onClick={() => { updateSettings({ voiceOutputEnabled: !settings.voiceOutputEnabled }); showSaved(); }}
-                className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
-                style={{
-                  background: settings.voiceOutputEnabled ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                }}
-              >
-                <span
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
-                  style={{
-                    transform: settings.voiceOutputEnabled ? 'translateX(20px)' : 'translateX(0)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }}
-                />
-              </button>
-            </SettingRow>
-            <SettingRow label="Leer respuestas automáticamente" description="Reproduce cada respuesta cuando termina">
-              <button
-                onClick={() => { updateSettings({ voiceAutoplay: !settings.voiceAutoplay }); showSaved(); }}
-                disabled={!settings.voiceOutputEnabled}
-                className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
-                style={{
-                  background: settings.voiceAutoplay && settings.voiceOutputEnabled ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                  opacity: settings.voiceOutputEnabled ? 1 : 0.4,
-                  cursor: settings.voiceOutputEnabled ? 'pointer' : 'default',
-                }}
-              >
-                <span
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
-                  style={{
-                    transform: settings.voiceAutoplay && settings.voiceOutputEnabled ? 'translateX(20px)' : 'translateX(0)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }}
-                />
-              </button>
-            </SettingRow>
-            <SettingRow label="Voz" description="Motor y voz utilizados para las respuestas habladas">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    background: ttsBackend?.available ? 'var(--color-success)' : 'var(--color-text-tertiary)',
-                  }}
-                />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {ttsBackend === null ? 'Comprobando...'
-                    : ttsBackend.available ? `${ttsBackend.backend}${ttsBackend.voice_id ? ` / ${ttsBackend.voice_id}` : ''}`
-                    : 'No configurado'}
-                </span>
-              </div>
-            </SettingRow>
-            <SettingRow label="Estado del reconocimiento" description="Motor local usado para transcribir el micrófono">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    background: speechBackendAvailable === true ? 'var(--color-success)'
-                      : speechBackendAvailable === false ? 'var(--color-text-tertiary)'
-                      : 'var(--color-text-tertiary)',
-                  }}
-                />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {speechBackendAvailable === null ? 'Comprobando...'
-                    : speechBackendAvailable ? 'Disponible'
-                    : 'No configurado'}
-                </span>
-              </div>
-            </SettingRow>
-            {!speechBackendAvailable && speechBackendAvailable !== null && (
-              <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
-                Set up a speech backend to use voice input.
-                See the <a href="https://open-jarvis.github.io/OpenJarvis/user-guide/tools/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
-              </div>
-            )}
-          </Section>
 
           {/* Data */}
           <Section title="Datos">

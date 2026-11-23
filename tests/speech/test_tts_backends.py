@@ -185,6 +185,27 @@ def test_kokoro_available_voices_includes_mandarin_and_english():
         assert v in voices, f"Existing voice {v} dropped from catalog"
 
 
+def test_zarek_spanish_catalog_has_six_distinct_real_profiles():
+    from openjarvis.speech.voice_catalog import spanish_voice_catalog
+
+    voices = spanish_voice_catalog()
+    assert len(voices) >= 5
+    assert len({voice["voice_id"] for voice in voices}) == len(voices)
+    assert all(voice["language"] == "Español" for voice in voices)
+    assert all(voice["license"] == "Apache-2.0" for voice in voices)
+    assert any("," in voice["voice_id"] for voice in voices)
+
+
+def test_kokoro_blends_keep_the_spanish_pipeline():
+    from openjarvis.speech.kokoro_tts import KokoroTTSBackend
+
+    assert KokoroTTSBackend._lang_for_voice("ef_dora,em_alex") == "e"
+    assert KokoroTTSBackend._lang_for_voice("em_alex,em_santa") == "e"
+    voices = KokoroTTSBackend().available_voices()
+    assert "ef_dora,em_alex" in voices
+    assert "em_alex,em_santa" in voices
+
+
 def test_kokoro_missing_chinese_deps_gives_actionable_error(monkeypatch):
     """When Mandarin G2P deps are missing, the user must see an install hint
     pointing at ``misaki[zh]`` rather than a raw ``ordered_set`` ImportError."""
