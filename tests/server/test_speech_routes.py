@@ -378,9 +378,12 @@ def test_voice_catalog_lists_spanish_profiles_without_loading_models():
     client = _tts_app(None)
     data = client.get("/v1/speech/voices").json()
 
-    assert len(data["voices"]) >= 5
+    assert len(data["voices"]) == 6
     assert {voice["backend"] for voice in data["voices"]} == {"kokoro"}
     assert all(voice["available"] for voice in data["voices"])
+    assert {voice["kind"] for voice in data["voices"]} == {"original", "blend"}
+    assert sum(voice["kind"] == "original" for voice in data["voices"]) == 3
+    assert sum(voice["kind"] == "blend" for voice in data["voices"]) == 3
     assert {provider["id"] for provider in data["providers"]} >= {
         "kokoro",
         "elevenlabs",

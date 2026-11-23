@@ -419,6 +419,8 @@ export interface VoiceProfile {
   name: string;
   voice_id: string;
   backend: string;
+  kind: 'original' | 'blend';
+  source_voices: string[];
   gender: string;
   language: string;
   accent: string;

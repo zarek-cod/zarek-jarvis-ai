@@ -150,7 +150,7 @@ export function MessageBubble({ message, isLive = false }: Props) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end mb-4">
+      <div className="zarek-message zarek-message--user flex justify-end mb-4">
         <div
           dir="auto"
           className="max-w-[85%] px-4 py-2.5 text-sm leading-relaxed"
@@ -169,7 +169,7 @@ export function MessageBubble({ message, isLive = false }: Props) {
   }
 
   return (
-    <div className="group mb-6">
+    <div className="zarek-message zarek-message--assistant group mb-6">
       {/* Deep Research timeline (steps + status) */}
       {(message.isResearch || (message.researchTraces && message.researchTraces.length > 0)) && (
         <ResearchTimeline

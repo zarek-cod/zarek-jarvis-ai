@@ -189,11 +189,14 @@ def test_zarek_spanish_catalog_has_six_distinct_real_profiles():
     from openjarvis.speech.voice_catalog import spanish_voice_catalog
 
     voices = spanish_voice_catalog()
-    assert len(voices) >= 5
+    assert len(voices) == 6
     assert len({voice["voice_id"] for voice in voices}) == len(voices)
     assert all(voice["language"] == "Español" for voice in voices)
     assert all(voice["license"] == "Apache-2.0" for voice in voices)
     assert any("," in voice["voice_id"] for voice in voices)
+    assert [voice["kind"] for voice in voices].count("original") == 3
+    assert [voice["kind"] for voice in voices].count("blend") == 3
+    assert all(voice["source_voices"] for voice in voices)
 
 
 def test_kokoro_blends_keep_the_spanish_pipeline():

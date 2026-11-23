@@ -134,7 +134,7 @@ export function ChatArea() {
   const PanelIcon = systemPanelOpen ? PanelRightClose : PanelRightOpen;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="zarek-chat flex flex-col h-full">
       {/* ZAREK status rail */}
       <div className="zarek-command-rail flex items-center justify-between px-4 py-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -185,7 +185,7 @@ export function ChatArea() {
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
+        className="zarek-chat__scroll flex-1 overflow-y-auto"
       >
         {isEmpty ? (
           <div className="zarek-hero flex flex-col items-center justify-center min-h-full px-4 py-8">
@@ -231,7 +231,7 @@ export function ChatArea() {
             </div>
           </div>
         ) : (
-          <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-4">
+          <div className="zarek-chat__thread max-w-[var(--chat-max-width)] mx-auto px-4 py-4">
             <div className="flex items-center justify-center mb-3">
               <ZarekCore compact />
             </div>
